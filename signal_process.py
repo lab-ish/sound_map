@@ -7,11 +7,12 @@
 #
 
 import sys
+import numpy as np
 
 #======================================================================
 class SignalProcess():
     #--------------------------------------------------
-    # winsize: windows size of FFT
+    # winsize: window size of FFT
     # shift  : shift size
     def __init__(self, data1, data2, winsize=1024, shift=256):
         # check shift size.
@@ -45,6 +46,16 @@ class SignalProcess():
     #--------------------------------------------------
     def __call__(self):
         return
+
+    #--------------------------------------------------
+    def fft(self, data, offset=0):
+        # FFT window
+        win = np.hamming(self.winsize)
+        # windowing
+        win_data = win * (data[offset:offset+self.folds].reshape(1,-1)[0])
+        # FFT
+        fft_ret = np.fft.fft(win_data)
+        return fft_ret
 
     #--------------------------------------------------
     def __del__(self):
