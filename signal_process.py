@@ -10,6 +10,7 @@ import sys
 
 #======================================================================
 class SignalProcess():
+    #--------------------------------------------------
     # winsize: windows size of FFT
     # shift  : shift size
     def __init__(self, data1, data2, winsize=1024, shift=256):
@@ -41,8 +42,10 @@ class SignalProcess():
 
         return
 
+    #--------------------------------------------------
     def __call__(self):
         return
 
+    #--------------------------------------------------
     def __del__(self):
         return

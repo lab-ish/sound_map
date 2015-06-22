@@ -12,6 +12,7 @@ import numpy as np
 
 #======================================================================
 class WaveData():
+    #--------------------------------------------------
     def __init__(self, datafile):
         # store data file name
         self.datafile = datafile
@@ -42,5 +43,6 @@ class WaveData():
         wav.close()
         return
 
+    #--------------------------------------------------
     def __del__(self):
         return
