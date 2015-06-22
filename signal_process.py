@@ -12,10 +12,10 @@ import numpy as np
 #======================================================================
 class SignalProcess():
     #--------------------------------------------------
-    # winsize: window size of FFT
-    # shift  : shift size
+    # winsize: FFT windowサイズ
+    # shift  : FFT windowをシフトするサイズ
     def __init__(self, data1, data2, winsize=1024, shift=256):
-        # check shift size.
+        # シフトサイズの倍数がFFT windowサイズであるかチェック
         if winsize % shift != 0:
             sys.stderr.write("Invalid shift size: window size is a multiple of shift size.\n")
             raise ValueError
@@ -23,13 +23,13 @@ class SignalProcess():
         self.shift   = shift
         self.folds   = self.winsize / self.shift
 
-        # check data length.
+        # データの長さは一致する？
         if len(data1) != len(data2):
             sys.stderr.write("Data length not match.\n")
             raise ValueError
 
-        # store data.
-        #   if data length is not a multiple of shift size, drop some data.
+        # データを格納
+        #   長さがシフトサイズの倍数でない場合には最後をカット
         if len(data1) % self.winsize != 0:
             self.data1 = data1[0:-(len(data1) % self.shift)]
             self.data2 = data2[0:-(len(data2) % self.shift)]
@@ -37,7 +37,7 @@ class SignalProcess():
             self.data1 = data1
             self.data2 = data2
 
-        # fold on shift size
+        # シフトサイズで折り返したテーブルを作成
         self.data1 = self.data1.reshape(-1,self.shift)
         self.data2 = self.data2.reshape(-1,self.shift)
 
@@ -51,7 +51,7 @@ class SignalProcess():
     def fft(self, data, offset=0):
         # FFT window
         win = np.hamming(self.winsize)
-        # windowing
+        # ウィンドウをかける
         win_data = win * (data[offset:offset+self.folds].reshape(1,-1)[0])
         # FFT
         fft_ret = np.fft.fft(win_data)

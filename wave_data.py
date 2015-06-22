@@ -14,10 +14,10 @@ import numpy as np
 class WaveData():
     #--------------------------------------------------
     def __init__(self, datafile):
-        # store data file name
+        # データファイル名を保存
         self.datafile = datafile
 
-        # open .wav
+        # .wavを開く
         wav = wave.open(self.datafile, "rb")
 
         #----------
@@ -26,18 +26,18 @@ class WaveData():
         self.sample_timelen = 1.0 / self.sample_rate
 
         #----------
-        # data
-        # retrieve whole data
+        # データ
+        # 全データ読み出し
         data = wav.readframes(wav.getnframes())
-        # check sample size
+        # サンプルのサイズを念のため見ておく
         sys.stderr.write("Sample size: %d bytes\n" % wav.getsampwidth())
-        # convert into integer
+        # integerに変換、サイズに注意
         self.raw_data = np.fromstring(data, dtype="int32")
 
         #----------
-        # number of channels
+        # チャネル数
         ch = wav.getnchannels()
-        # use 2 columns for stereo data: [0,:]=left, [1,:]=right
+        # ステレオデータの場合には折り返しておく: [0,:]=left, [1,:]=right
         self.raw_data = self.raw_data.reshape(-1,ch).transpose()
 
         wav.close()

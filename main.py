@@ -17,11 +17,11 @@ if __name__ == '__main__':
         sys.stderr.write("Usage: python %s <wavefile>\n" % sys.argv[0])
         quit()
 
-    # load data.
+    # データ読み込み
     wavefile = sys.argv[1]
     data = wave_data.WaveData(wavefile)
 
-    # process data.
+    # データ処理
     sig = signal_process.SignalProcess(data.raw_data[0], data.raw_data[1])
 
     del data
