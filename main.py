@@ -8,6 +8,8 @@
 
 import sys
 
+import wave_data
+
 #======================================================================
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -15,3 +17,6 @@ if __name__ == '__main__':
         quit()
 
     wavefile = sys.argv[1]
+    data = wave_data.WaveData(wavefile)
+
+    del data

@@ -9,6 +9,7 @@
 Required Libraries
 ==================
 
+* wave
 * numpy
 * scipy
 
