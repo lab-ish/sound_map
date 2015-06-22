@@ -11,6 +11,7 @@ Required Libraries
 
 * wave
 * numpy
+* scipy
 
 Usage
 =====
