@@ -12,7 +12,6 @@ import numpy as np
 
 #======================================================================
 class WaveData():
-    #--------------------------------------------------
     def __init__(self, datafile):
         # データファイル名を保存
         self.datafile = datafile
@@ -39,6 +38,13 @@ class WaveData():
         ch = wav.getnchannels()
         # ステレオデータの場合には折り返しておく: [0,:]=left, [1,:]=right
         self.raw_data = self.raw_data.reshape(-1,ch).transpose()
+
+        if ch == 2:
+            self.left  = self.raw_data[0]
+            self.right = self.raw_data[1]
+        else:
+            self.left  = self.raw_data[0]
+            self.right = self.left
 
         wav.close()
         return
