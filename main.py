@@ -9,6 +9,7 @@
 import sys
 
 import wave_data
+import signal_process
 
 #======================================================================
 if __name__ == '__main__':
@@ -16,7 +17,11 @@ if __name__ == '__main__':
         sys.stderr.write("Usage: python %s <wavefile>\n" % sys.argv[0])
         quit()
 
+    # load data.
     wavefile = sys.argv[1]
     data = wave_data.WaveData(wavefile)
+
+    # process data.
+    sig = signal_process.SignalProcess(data.raw_data[0], data.raw_data[1])
 
     del data
