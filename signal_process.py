@@ -44,17 +44,23 @@ class SignalProcess():
         return
 
     #--------------------------------------------------
-    def __call__(self):
-        sound_map = np.array([self.gcc_phat(self.data1, self.data2, offset) for offset in range(0,self.data1.shape[0] - self.folds)])
+    def __call__(self, end=None):
+        if end is None:
+            end = self.data1.shape[0]-self.folds
+        if end > self.data1.shape[0]-self.folds:
+            end = self.data1.shape[0]-self.folds
+
+        sound_map = np.array([self.gcc_phat(offset) for offset in range(0,end)])
         return sound_map
 
     #--------------------------------------------------
-    def gcc_phat(self, data1, data2, offset):
-        fft_data1 = self.fft(data1, offset)
-        fft_data2 = self.fft(data2, offset)
+    def gcc_phat(self, offset):
+        fft_data1 = self.fft(self.data1, offset)
+        fft_data2 = self.fft(self.data2, offset)
 
         # GCC
         gcc = self.gcc(fft_data1, fft_data2)
+
         # 絶対値が最大になるところを探す
         #   最大になる点が2点以上ある場合は最初のもの
         gcc = abs(gcc)
@@ -72,9 +78,11 @@ class SignalProcess():
     def fft(self, data, offset=0):
         # FFT window
         win = np.hamming(self.winsize)
+
         # ウィンドウをかける
         #   データは折り返してあるので、必要行数を取り出してから1行に変換する
         win_data = win * (data[offset:offset+self.folds].reshape(1,-1)[0])
+
         # FFT
         fft_ret = np.fft.fft(win_data)
         return fft_ret

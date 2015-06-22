@@ -24,15 +24,22 @@ if __name__ == '__main__':
 
     # データ処理
     sig = signal_process.SignalProcess(data.raw_data[0], data.raw_data[1])
-    sound_map = sig()
+    # sound_map = sig(1000000)
+    sound_map = sig(10000)
+
+    # 真ん中より先は折り返してマイナスとする
+    #   例: 1024点の場合のインデックス変換
+    #      元: 0 1 2 3 ... 510 511  512  513 ... 1022 1023
+    #      ↓
+    #      後: 0 1 2 3 ... 510 511 -512 -511 ...   -2   -1
+    sound_map[(sound_map >= sig.winsize/2)] -= sig.winsize
 
     # ファイルへの書き出し
     index = np.arange(0, len(sound_map))
     timebox = data.sample_timelen * sig.shift * index
-    sound_maptime = sound_map * data.sample_timelen
-    save_data = np.c_[index, timebox, sound_map, sound_maptime]
+    save_data = np.c_[index, timebox, sound_map]
     np.savetxt("sound_map.dat", save_data,
-               fmt=["%d", "%g", "%g", "%g"],
+               fmt=["%d", "%g", "%g"],
                delimiter="\t")
 
     del data
