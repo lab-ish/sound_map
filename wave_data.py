@@ -9,6 +9,7 @@
 import sys
 import wave
 import numpy as np
+from scipy import signal as sp
 
 #======================================================================
 class WaveData():
@@ -28,8 +29,9 @@ class WaveData():
         # データ
         # 全データ読み出し
         data = wav.readframes(wav.getnframes())
-        # サンプルのサイズを念のため見ておく
-        sys.stderr.write("Sample size: %d bytes\n" % wav.getsampwidth())
+        # # サンプルのサイズを念のため見ておく
+        # sys.stderr.write("Sample size: %d bytes\n" % wav.getsampwidth())
+
         # integerに変換、サイズに注意
         self.raw_data = np.fromstring(data, dtype="int32")
 
@@ -39,6 +41,8 @@ class WaveData():
         # ステレオデータの場合には折り返しておく: [0,:]=left, [1,:]=right
         self.raw_data = self.raw_data.reshape(-1,ch).transpose()
 
+        self.__downsample()
+
         if ch == 2:
             self.left  = self.raw_data[0]
             self.right = self.raw_data[1]
@@ -47,6 +51,15 @@ class WaveData():
             self.right = self.left
 
         wav.close()
+        return
+
+    #--------------------------------------------------
+    # downsampling
+    def __downsample(self, factor=4):
+        self.raw_data = sp.decimate(self.raw_data, factor, axis=1)
+        self.sample_rate /= factor
+        self.sample_timelen *= factor
+
         return
 
     #--------------------------------------------------

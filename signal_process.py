@@ -60,6 +60,11 @@ class SignalProcess():
         # GCC
         gcc = self.gcc(fft_data1, fft_data2)
 
+        # # 帯域を制限するマスクをかける
+        # mask = np.zeros(self.winsize, dtype='int8')
+        # mask[(512-86):(512+86)] = 1
+        # gcc *= mask
+
         # 絶対値が最大になるところを探す
         #   最大になる点が2点以上ある場合は最初のもの
         gcc = abs(gcc)

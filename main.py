@@ -24,8 +24,7 @@ if __name__ == '__main__':
 
     # データ処理
     sig = signal_process.SignalProcess(data.raw_data[0], data.raw_data[1])
-    # sound_map = sig(1000000)
-    sound_map = sig(10000)
+    sound_map = sig()
 
     # 真ん中より先は折り返してマイナスとする
     #   例: 1024点の場合のindex変換
