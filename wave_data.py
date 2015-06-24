@@ -33,7 +33,7 @@ class WaveData():
         # sys.stderr.write("Sample size: %d bytes\n" % wav.getsampwidth())
 
         # integerに変換、サイズに注意
-        self.raw_data = np.fromstring(data, dtype="int32")
+        self.raw_data = np.fromstring(data, dtype="int16")
 
         #----------
         # チャネル数
