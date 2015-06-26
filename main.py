@@ -23,7 +23,7 @@ if __name__ == '__main__':
     data = wave_data.WaveData(wavefile)
 
     # データ処理
-    sig = signal_process.SignalProcess(data.raw_data[0], data.raw_data[1])
+    sig = signal_process.SignalProcess(data.left, data.right)
     sound_map = sig()
 
     # 真ん中より先は折り返してマイナスとする

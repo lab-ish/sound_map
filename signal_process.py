@@ -29,7 +29,7 @@ class SignalProcess():
 
         # データを格納
         #   長さがシフトサイズの倍数でない場合には最後をカット
-        if len(data1) % self.winsize != 0:
+        if len(data1) % self.shift != 0:
             self.data1 = data1[0:-(len(data1) % self.shift)]
             self.data2 = data2[0:-(len(data2) % self.shift)]
         else:
