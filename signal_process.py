@@ -13,7 +13,7 @@ import numpy as np
 class SignalProcess():
     # winsize: FFT windowサイズ
     # shift  : FFT windowをシフトするサイズ
-    def __init__(self, data1, data2, winsize=1024, shift=256):
+    def __init__(self, data1, data2, winsize=512, shift=128):
         # シフトサイズの倍数がFFT windowサイズであるかチェック
         if winsize % shift != 0:
             sys.stderr.write("Invalid shift size: window size is a multiple of shift size.\n")
@@ -57,6 +57,13 @@ class SignalProcess():
         fft_data1 = self.fft(self.data1, offset)
         fft_data2 = self.fft(self.data2, offset)
 
+        # 帯域の1/8のLPFをかける
+        lowpass = np.append(np.append(np.ones(self.winsize/16),
+                                      np.zeros(self.winsize-self.winsize/8)),
+                                      np.ones(self.winsize/16))
+        fft_data1 = lowpass * fft_data1
+        fft_data2 = lowpass * fft_data2
+
         # GCC
         gcc = self.gcc(fft_data1, fft_data2)
 
@@ -65,17 +72,29 @@ class SignalProcess():
         # mask[(512-86):(512+86)] = 1
         # gcc *= mask
 
-        # 絶対値が最大になるところを探す
-        #   最大になる点が2点以上ある場合は最初のもの
+        delay_result = []
         gcc = abs(gcc)
-        max_idx = np.where(gcc == max(gcc))[0][0]
+        if np.amax(gcc) >= 0.06:
+            max_value = np.amax(gcc)
+            delay = np.where(gcc == max_value)[0][0]
+            if delay >= self.winsize/2:
+                delay -= self.winsize-1
+            #マイク幅50cmの場合の有効値
+            if delay > 71 or delay < -71:
+                 delay = -100
+            delay_result.append(delay)
+        else :
+        # GCCが閾値以上でない場合は破棄
+            delay_result.append(-100)
 
-        return max_idx
+        return delay_result
 
     #--------------------------------------------------
     def gcc(self, fdata1, fdata2):
         ret = fdata1 * np.conj(fdata2)
-        ret /= abs(ret)
+        # 0で割るとエラーになるので小さい値を足しておく
+        ret /= (abs(ret)+1e-6)
+
         return np.fft.ifft(ret)
 
     #--------------------------------------------------
@@ -90,6 +109,79 @@ class SignalProcess():
         # FFT
         fft_ret = np.fft.fft(win_data)
         return fft_ret
+
+    #--------------------------------------------------
+    def count(self, soundmap):
+        state = 0
+        hit_count = 0
+        miss_count = 0
+        num_count = 0
+        start = 0
+        temp = 0
+        prev_pos = 0
+        now_pos = 0
+        through = 0
+        THRESHOLD_VER = 10
+        THRESHOLD_HORI = 20
+
+        for i in range(1,len(soundmap)-1):
+            if soundmap[i] == -100:
+                through += 1
+                continue
+            else:
+                prev_pos = now_pos
+                now_pos = i
+            if state == 0:
+                if abs(soundmap[now_pos] - soundmap[prev_pos]) <= THRESHOLD_VER:
+                    start = now_pos
+                    hit_count += 1
+                    state = 1
+            elif state == 1:
+                if abs(soundmap[now_pos] - soundmap[prev_pos]) <= THRESHOLD_VER:
+                    hit_count += 1
+                else:
+                    miss_count += 1
+                    state = 2
+                    temp = soundmap[prev_pos]
+            elif state == 2:
+                if abs(soundmap[now_pos] - temp) <= THRESHOLD_VER:
+                   hit_count += 1
+                   miss_count = 0
+                   state = 1
+                else:
+                    miss_count += 1
+
+                if miss_count >=THRESHOLD_HORI:
+                    if hit_count >= 100 and (soundmap[start] * temp) < 0:
+                        print "○○○○○○○○○○○○"
+                        print str(start) + "to" + str(prev_pos)
+                        print str(start * (1.0/375.0))+ "秒" + "to" + str(prev_pos * (1.0/375.0)) + "秒"
+                        print str(((start + prev_pos)/2.0) * (1.0/375.0)) + "秒"
+                        print "○○○○○○○○○○○○"
+                        num_count += 1
+                    # else :
+                    #      print "××××××××××××"
+                    #      print hit_count
+                    #      print soundmap[start]
+                    #      print temp
+                    #      print str(start) + "to" + str(prev_pos)
+                    #      print str(((start + prev_pos)/2.0) * (1.0/375.0)) + "秒"
+                    #      print "××××××××××××"
+                    state = 0
+                    hit_count = 0
+                    miss_count = 0
+            through = 0
+
+        if hit_count >= 100 and (soundmap[start] * temp) < 0:
+            print str(start) + "to" + str(prev_pos)
+            print str(start * (1.0/375.0))+ "秒" + "to" + str(prev_pos * (1.0/375.0)) + "秒"
+            print str(((start + prev_pos)/2.0) * (1.0/375.0)) + "秒"
+            num_count += 1
+
+        print "台数" + str(num_count)
+        return
+
+
 
     #--------------------------------------------------
     def __del__(self):
