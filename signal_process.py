@@ -50,6 +50,17 @@ class SignalProcess():
             end = self.data1.shape[0]-self.folds
 
         sound_map = np.array([self.gcc_phat(offset) for offset in range(0,end)])
+
+        # 真ん中より先は折り返してマイナスとする
+        #   例: 1024点の場合のindex変換
+        #      元: 0 1 2 3 ... 510 511  512  513 ... 1022 1023
+        #      ↓
+        #      後: 0 1 2 3 ... 510 511 -512 -511 ...   -2   -1
+        sound_map[(sound_map >= self.winsize/2)] -= self.winsize
+
+        #マイク幅50cmの場合の有効値以外は捨てる
+        sound_map[(abs(sound_map) > 71)] = -100
+
         return sound_map
 
     #--------------------------------------------------
@@ -66,28 +77,13 @@ class SignalProcess():
 
         # GCC
         gcc = self.gcc(fft_data1, fft_data2)
-
-        # # 帯域を制限するマスクをかける
-        # mask = np.zeros(self.winsize, dtype='int8')
-        # mask[(512-86):(512+86)] = 1
-        # gcc *= mask
-
-        delay_result = []
         gcc = abs(gcc)
-        if np.amax(gcc) >= 0.06:
-            max_value = np.amax(gcc)
-            delay = np.where(gcc == max_value)[0][0]
-            if delay >= self.winsize/2:
-                delay -= self.winsize-1
-            #マイク幅50cmの場合の有効値
-            if delay > 71 or delay < -71:
-                 delay = -100
-            delay_result.append(delay)
+        max_value = np.amax(gcc)
+        if max_value >= 0.06:
+            return np.where(gcc == max_value)[0][0]
         else :
         # GCCが閾値以上でない場合は破棄
-            delay_result.append(-100)
-
-        return delay_result
+            return -100
 
     #--------------------------------------------------
     def gcc(self, fdata1, fdata2):
