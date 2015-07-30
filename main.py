@@ -23,7 +23,7 @@ if __name__ == '__main__':
     data = wave_data.WaveData(wavefile)
 
     # データ処理
-    sig = signal_process.SignalProcess(data.raw_data[0], data.raw_data[1])
+    sig = signal_process.SignalProcess(data.left, data.right)
     sound_map = sig()
 
     # 真ん中より先は折り返してマイナスとする
@@ -32,6 +32,8 @@ if __name__ == '__main__':
     #      ↓
     #      後: 0 1 2 3 ... 510 511 -512 -511 ...   -2   -1
     sound_map[(sound_map >= sig.winsize/2)] -= sig.winsize
+
+    sig.count(sound_map)
 
     # ファイルへの書き出し
     index = np.arange(0, len(sound_map))
