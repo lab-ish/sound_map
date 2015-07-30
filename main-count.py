@@ -33,6 +33,8 @@ if __name__ == '__main__':
     #      後: 0 1 2 3 ... 510 511 -512 -511 ...   -2   -1
     sound_map[(sound_map >= sig.winsize/2)] -= sig.winsize
 
+    sig.count(sound_map)
+
     # ファイルへの書き出し
     index = np.arange(0, len(sound_map))
     timebox = data.sample_timelen * sig.shift * index

@@ -16,7 +16,10 @@ Required Libraries
 Usage
 =====
 
-* ``python main.py <wavefile>`` のように音声のwavファイルを指定して実行する。
+:code:`python main.py <wavefile>` のように音声のwavファイルを指定して実行する。
+
+台数カウントを行う場合は :code:`main.py` の代わりに :code:`main-count.py` を用いる。
+
 
 注意事項
 ========
