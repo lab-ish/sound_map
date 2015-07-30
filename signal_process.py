@@ -3,7 +3,7 @@
 # Copyright (c) 2015, Shigemi ISHIDA
 # All rights reserved.
 #
-# DO NOT REDISTRIBUTE THIS PROGRAM AND A PART OF THIS PROGRAM.
+# DO NOT REDISTRIBUTE THIS PROGRAM NOR A PART OF THIS PROGRAM.
 #
 
 import sys
@@ -29,7 +29,7 @@ class SignalProcess():
 
         # データを格納
         #   長さがシフトサイズの倍数でない場合には最後をカット
-        if len(data1) % self.winsize != 0:
+        if len(data1) % self.shift != 0:
             self.data1 = data1[0:-(len(data1) % self.shift)]
             self.data2 = data2[0:-(len(data2) % self.shift)]
         else:
@@ -57,7 +57,10 @@ class SignalProcess():
         fft_data1 = self.fft(self.data1, offset)
         fft_data2 = self.fft(self.data2, offset)
 
-        lowpass = np.append(np.append(np.ones(64),np.zeros(1024-2*64)),np.ones(64))
+        # 帯域の1/8のLPFをかける
+        lowpass = np.append(np.append(np.ones(self.winsize/16),
+                                      np.zeros(self.winsize-self.winsize/8)),
+                                      np.ones(self.winsize/16))
         fft_data1 = lowpass * fft_data1
         fft_data2 = lowpass * fft_data2
 
@@ -70,19 +73,18 @@ class SignalProcess():
         # gcc *= mask
 
         delay_result = []
-        # 絶対値が最大になるところを探す
-        #   最大になる点が2点以上ある場合は最初のもの
         gcc = abs(gcc)
         if np.amax(gcc) >= 0.06:
             max_value = np.amax(gcc)
             delay = np.where(gcc == max_value)[0][0]
-            if delay >= 512:
-                delay -= 1023
+            if delay >= self.winsize/2:
+                delay -= self.winsize-1
             #マイク幅50cmの場合の有効値
             if delay > 71 or delay < -71:
                  delay = -100
             delay_result.append(delay)
         else :
+        # GCCが閾値以上でない場合は破棄
             delay_result.append(-100)
 
         return delay_result
@@ -90,6 +92,7 @@ class SignalProcess():
     #--------------------------------------------------
     def gcc(self, fdata1, fdata2):
         ret = fdata1 * np.conj(fdata2)
+        # 0で割るとエラーになるので小さい値を足しておく
         ret /= (abs(ret)+1e-6)
 
         return np.fft.ifft(ret)
@@ -104,7 +107,7 @@ class SignalProcess():
         win_data = win * (data[offset:offset+self.folds].reshape(1,-1)[0])
 
         # FFT
-        fft_ret = np.fft.fft(win_data,1024)
+        fft_ret = np.fft.fft(win_data)
         return fft_ret
 
     #--------------------------------------------------
