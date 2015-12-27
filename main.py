@@ -7,6 +7,7 @@
 #
 
 import sys
+import os.path
 import numpy as np
 
 import wave_data
@@ -33,7 +34,9 @@ if __name__ == '__main__':
     index = np.arange(0, len(sound_map))
     timebox = data.sample_timelen * sig.shift * index
     save_data = np.c_[index, timebox, sound_map]
-    np.savetxt("sound_map.dat", save_data,
+    # ファイル名はbasenameを使う（拡張子を変更したものにする）
+    outname = os.path.splitext(wavefile)[0] + '.dat'
+    np.savetxt(outname, save_data,
                fmt=["%d", "%g", "%g"],
                delimiter="\t")
 
