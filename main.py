@@ -26,6 +26,9 @@ if __name__ == '__main__':
     sig = signal_process.SignalProcess(data.left, data.right)
     sound_map = sig()
 
+    # サウンドマップはindex番号になっているので時間差に変換
+    sound_map = sound_map * 1e3 / data.sample_rate
+
     # ファイルへの書き出し
     index = np.arange(0, len(sound_map))
     timebox = data.sample_timelen * sig.shift * index
