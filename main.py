@@ -7,6 +7,7 @@
 #
 
 import sys
+import os.path
 import numpy as np
 
 import wave_data
@@ -26,11 +27,16 @@ if __name__ == '__main__':
     sig = signal_process.SignalProcess(data.left, data.right)
     sound_map = sig()
 
+    # サウンドマップはindex番号になっているので時間差に変換
+    sound_map = sound_map * 1e3 / data.sample_rate
+
     # ファイルへの書き出し
     index = np.arange(0, len(sound_map))
     timebox = data.sample_timelen * sig.shift * index
     save_data = np.c_[index, timebox, sound_map]
-    np.savetxt("sound_map.dat", save_data,
+    # ファイル名はbasenameを使う（拡張子を変更したものにする）
+    outname = os.path.splitext(wavefile)[0] + '.dat'
+    np.savetxt(outname, save_data,
                fmt=["%d", "%g", "%g"],
                delimiter="\t")
 
