@@ -59,8 +59,8 @@ if __name__ == '__main__':
              marker='',
              linestyle='-',
              )
-    plt.xlabel("Sound delay $\Delta t$ [ms]")
-    plt.ylabel("Cross correlation")
+    plt.xlabel("Time $t$ [ms]")
+    plt.ylabel("Generalized cross correlation")
     # プロットの調整
     plt.rcParams['font.family'] = 'Times New Roman' # 全体のフォント
     plt.rcParams['font.size'] = 22                  # フォントサイズ
@@ -70,6 +70,5 @@ if __name__ == '__main__':
     plt.rcParams['ps.useafm'] = True
     plt.rcParams['pdf.use14corefonts'] = True
     plt.rcParams['text.usetex'] = True
-
 
     plt.savefig(outname)
