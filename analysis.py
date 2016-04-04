@@ -1,0 +1,176 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2016, Shigemi ISHIDA
+# All rights reserved.
+#
+# DO NOT REDISTRIBUTE THIS PROGRAM NOR A PART OF THIS PROGRAM.
+#
+
+import sys
+import pandas as pd
+import numpy as np
+from argparse import ArgumentParser
+
+#======================================================================
+def arg_parser():
+    usage = 'python {} [-o <save_file>] [--help] <datafile1> [datafile2] ...'\
+            .format(__file__)
+    ap = ArgumentParser(usage=usage)
+    ap.add_argument('-o', type=str,
+                    nargs='?',
+                    dest='save_file',
+                    help='output file name')
+    ap.add_argument('datafiles', type=str,
+                    nargs='*',
+                    help='input file names')
+    return ap
+
+#----------------------------------------------------------------------
+def extract_simultaneous(dframe):
+    dframe = dframe.sort_values('time').reset_index(drop=True)
+    dframe['time_diff']  = dframe.time.diff()
+    # time_diffを1つ手前にずらしたもの
+    dframe['time_diff2'] = dframe.time_diff[1:len(dframe.time_diff)].append(
+        pd.Series([np.nan])).reset_index(drop=True)
+
+    return dframe[(dframe.time_diff <= 2) | (dframe.time_diff2 <= 2)]
+
+#======================================================================
+if __name__ == '__main__':
+    ap = arg_parser()
+    args = ap.parse_args()
+    if len(args.datafiles) < 1:
+        print "no datafiles given"
+        ap.print_help()
+        quit()
+    datafiles = args.datafiles
+    savefile  = args.save_file
+    # datafiles = ['150609.dat', '151014_01.dat', '151014_02.dat']
+
+    dfs = []
+    for datafile in datafiles:
+        df = pd.read_csv(datafile,
+                         skiprows=1,
+                         delimiter='\t',
+                         header=None,
+                         names=('time', 'type', 'dir', 'true', 'w_img', 'wo_img'))
+        dfs.append(df)
+
+    # concat dataframes
+    df = pd.concat(dfs).reset_index(drop=True)
+
+    # dataframe storing results
+    result = pd.DataFrame(columns=['tp', 'fn', 'fp'])
+
+    # w/ image process
+    tp = len(df[(df.w_img==1) & (df.true==1)])
+    fn = len(df[(df.w_img==0) & (df.true==1)])
+    fp = len(df[(df.w_img==1) & (df.true==0)])
+    result = result.append(pd.Series([tp, fn, fp],
+                                     index=('tp', 'fn', 'fp'),
+                                     name='w/ img'))
+    # w/ image process for each dir
+    tp = len(df[(df.dir=='L2R') & (df.w_img==1) & (df.true==1)])
+    fn = len(df[(df.dir=='L2R') & (df.w_img==0) & (df.true==1)])
+    fp = len(df[(df.dir=='L2R') & (df.w_img==1) & (df.true==0)])
+    result = result.append(pd.Series([tp, fn, fp],
+                                     index=('tp', 'fn', 'fp'),
+                                     name='w/ img (L2R)'))
+    tp = len(df[(df.dir=='R2L') & (df.w_img==1) & (df.true==1)])
+    fn = len(df[(df.dir=='R2L') & (df.w_img==0) & (df.true==1)])
+    fp = len(df[(df.dir=='R2L') & (df.w_img==1) & (df.true==0)])
+    result = result.append(pd.Series([tp, fn, fp],
+                                     index=('tp', 'fn', 'fp'),
+                                     name='w/ img (R2L)'))
+
+    # w/o image process
+    tp = len(df[(df.wo_img==1) & (df.true==1)])
+    fn = len(df[(df.wo_img==0) & (df.true==1)])
+    fp = len(df[(df.wo_img==1) & (df.true==0)])
+    result = result.append(pd.Series([tp, fn, fp],
+                                     index=('tp', 'fn', 'fp'),
+                                     name='w/o img'))
+    # w/o image process for each dir
+    tp = len(df[(df.dir=='L2R') & (df.wo_img==1) & (df.true==1)])
+    fn = len(df[(df.dir=='L2R') & (df.wo_img==0) & (df.true==1)])
+    fp = len(df[(df.dir=='L2R') & (df.wo_img==1) & (df.true==0)])
+    result = result.append(pd.Series([tp, fn, fp],
+                                     index=('tp', 'fn', 'fp'),
+                                     name='w/o img (L2R)'))
+    tp = len(df[(df.dir=='R2L') & (df.wo_img==1) & (df.true==1)])
+    fn = len(df[(df.dir=='R2L') & (df.wo_img==0) & (df.true==1)])
+    fp = len(df[(df.dir=='R2L') & (df.wo_img==1) & (df.true==0)])
+    result = result.append(pd.Series([tp, fn, fp],
+                                     index=('tp', 'fn', 'fp'),
+                                     name='w/o img (R2L)'))
+
+    # normal car
+    tp = len(df[((df.type=='normal')|(df.type=='middle')) & (df.w_img==1) & (df.true==1)])
+    fn = len(df[((df.type=='normal')|(df.type=='middle')) & (df.w_img==0) & (df.true==1)])
+    fp = len(df[((df.type=='normal')|(df.type=='middle')) & (df.w_img==1) & (df.true==0)])
+    result = result.append(pd.Series([tp, fn, fp],
+                                     index=('tp', 'fn', 'fp'),
+                                     name='normal cars'))
+
+    # bus, truck
+    tp = len(df[((df.type=='bus')|(df.type=='truck')) & (df.w_img==1) & (df.true==1)])
+    fn = len(df[((df.type=='bus')|(df.type=='truck')) & (df.w_img==0) & (df.true==1)])
+    fp = len(df[((df.type=='bus')|(df.type=='truck')) & (df.w_img==1) & (df.true==0)])
+    result = result.append(pd.Series([tp, fn, fp],
+                                     index=('tp', 'fn', 'fp'),
+                                     name='buses and trucks'))
+
+    # small car
+    tp = len(df[((df.type=='small')|(df.type=='small truck')) & (df.w_img==1) & (df.true==1)])
+    fn = len(df[((df.type=='small')|(df.type=='small truck')) & (df.w_img==0) & (df.true==1)])
+    fp = len(df[((df.type=='small')|(df.type=='small truck')) & (df.w_img==1) & (df.true==0)])
+    result = result.append(pd.Series([tp, fn, fp],
+                                     index=('tp', 'fn', 'fp'),
+                                     name='small cars'))
+
+    # bike
+    tp = len(df[(df.type=='bike') & (df.w_img==1) & (df.true==1)])
+    fn = len(df[(df.type=='bike') & (df.w_img==0) & (df.true==1)])
+    fp = len(df[(df.type=='bike') & (df.w_img==1) & (df.true==0)])
+    result = result.append(pd.Series([tp, fn, fp],
+                                     index=('tp', 'fn', 'fp'),
+                                     name='bikes'))
+
+    # calculate accuracy, precision, recall, and f-measure
+    result["accuracy"]  = result.tp / result.sum(axis=1)
+    result["precision"] = result.tp / (result.tp+result.fp)
+    result["recall"]    = result.tp / (result.tp+result.fn)
+    result["f_measure"] = 2*result.precision*result.recall / (result.precision+result.recall)
+
+    print result
+
+    if savefile is not None:
+        with open(savefile, 'w') as f:
+            f.write("# ")
+            result.to_csv(savefile,
+                          sep='\t',
+                          index=True,
+                          na_rep='-',
+                          mode='a',
+                          )
+
+    # extract simultaneous passing
+    simuls = []
+    for d in dfs:
+        simuls.append(extract_simultaneous(d))
+    simul = pd.concat(simuls).reset_index(drop=True)
+
+    simul_passing = {}
+    simul_passing['normal']    = len(simul[((simul.type=='normal')|(simul.type=='middle'))])
+    simul_passing['bus,truck'] = len(simul[((simul.type=='bus')|(simul.type=='truck'))])
+    simul_passing['small']     = len(simul[((simul.type=='small')|(simul.type=='small truck'))])
+    simul_passing['bike']      = len(simul[(simul.type=='bike')])
+    print
+    print "simultaneous passing:"
+    print simul_passing
+    print simul
+
+    if savefile is not None:
+        with open(savefile, 'a') as f:
+            f.write("\n# number of simultaneous passing\n# ")
+            f.write(str(simul_passing) + "\n")
