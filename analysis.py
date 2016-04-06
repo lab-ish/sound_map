@@ -13,13 +13,17 @@ from argparse import ArgumentParser
 
 #======================================================================
 def arg_parser():
-    usage = 'python {} [-o <save_file>] [--help] <datafile1> [datafile2] ...'\
+    usage = 'python {} [-o <save_file>] [-s] [--help] <datafile1> [datafile2] ...'\
             .format(__file__)
     ap = ArgumentParser(usage=usage)
     ap.add_argument('-o', type=str,
                     nargs='?',
                     dest='save_file',
                     help='output file name')
+    ap.add_argument('-s',
+                    dest='simul',
+                    action='store_true',
+                    help='analyze simultaneous passing')
     ap.add_argument('datafiles', type=str,
                     nargs='*',
                     help='input file names')
@@ -153,6 +157,9 @@ if __name__ == '__main__':
                           na_rep='-',
                           mode='a',
                           )
+
+    if args.simul is not True:
+        quit()
 
     # extract simultaneous passing
     simuls = []
