@@ -16,28 +16,42 @@ Required Libraries
 Usage
 =====
 
+基本的な使い方
+--------------
+
 :code:`python main.py <wavefile>` のように音声のwavファイルを指定して実行する。
+Sound mapデータはwavファイルの拡張子を ``.dat`` に変更したものに書き出される。
+出力先を変更したい場合は出力先ファイル名を指定する。
 
-台数カウントを行う場合は :code:`main.py` の代わりに :code:`main-count.py` を用いる。
+.. code-block:: bash
 
+   % python main.py <wavefile> [soundmap_out]
+
+GCC結果のグラフ化
+-----------------
+
+GCC結果をグラフ化するためには ``plotting.py`` を使用する。
+
+.. code-block:: bash
+
+   % python plotting.py <wavefile>
+
+データをどの位置をグラフ化するかは ``offset`` で指定する。
+``offset`` はウィンドウに区切ったデータの何番目を使うかであり、デフォルトは0である。
+
+.. code-block:: bash
+
+   % python plotting.py <wavefile> [offset]
 
 注意事項
 ========
 
-24-bitのwaveファイルを処理する場合はとても遅いです。
-
-* 24-bitはそのままでは読み込めず、変換を行う必要があるため。
-
-注意事項
-========
-
-24-bitのwaveファイルを処理する場合はとても遅いです。
-
-* 24-bitはそのままでは読み込めず、変換を行う必要があるため。
+24-bitのwaveファイルを処理する場合、そのままでは読み込めず変換を行う必要があるためにとても遅い。
+可能な限り16-bitなどに変換してから入力すること。
 
 Copyright, License
 ==================
 
-Copyright (c) 2015, Shigemi ISHIDA
+Copyright (c) 2015-2016, Shigemi ISHIDA
 
 **DO NOT REDISTRIBUTE THIS PROGRAM NOR A PART OF THIS PROGRAM.**
