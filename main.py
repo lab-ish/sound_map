@@ -37,13 +37,14 @@ if __name__ == '__main__':
     sound_map = sound_map * 1e3 / data.sample_rate
 
     # ファイルへの書き出し
-    if outfile is not None:
-        index = np.arange(0, len(sound_map))
-        timebox = data.sample_timelen * sig.shift * index
-        save_data = np.c_[index, timebox, sound_map]
-        np.savetxt(outname, save_data,
+    index = np.arange(0, len(sound_map))
+    timebox = data.sample_timelen * sig.shift * index
+    save_data = np.c_[index, timebox, sound_map]
+    with open(outname, "w") as f:
+        f.write("#index\ttime\tsound_delay\n")
+        np.savetxt(f, save_data,
                    fmt=["%d", "%g", "%g"],
-                   delimiter="\t")
+                       delimiter="\t")
 
     del data
     del sig
