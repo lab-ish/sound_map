@@ -34,17 +34,19 @@ if __name__ == '__main__':
     sound_map = sig()
 
     # サウンドマップはindex番号になっているので時間差に変換
-    sound_map = sound_map * 1e3 / data.sample_rate
+    sound_map_time = sound_map * 1e3 / data.sample_rate
 
     # ファイルへの書き出し
     index = np.arange(0, len(sound_map))
     timebox = data.sample_timelen * sig.shift * index
-    save_data = np.c_[index, timebox, sound_map]
+    save_data = np.c_[index, timebox, sound_map, sound_map_time]
+    print "Writing output to %s ..." % (outname),
     with open(outname, "w") as f:
-        f.write("#index\ttime\tsound_delay\n")
+        f.write("#index\ttime\tsound_delay\tsound_delay_time\n")
         np.savetxt(f, save_data,
-                   fmt=["%d", "%g", "%g"],
-                       delimiter="\t")
+                   fmt=["%d", "%g", "%d", "%g"],
+                   delimiter="\t")
+    print "done"
 
     del data
     del sig
