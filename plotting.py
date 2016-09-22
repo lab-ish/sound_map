@@ -37,23 +37,23 @@ def single_plot(sig, outname, offset):
     timebox = np.arange(-sig.winsize/2, sig.winsize/2) * 1e3 / data.sample_rate
 
     # plot
-    fig = plt.figure()
-    plt.plot(timebox, gcc,
-             marker='',
-             linestyle='-',
-             )
-    plt.xlabel("Time $t$ [ms]")
-    plt.ylabel("Generalized cross correlation")
     # プロットの調整
     plt.rcParams['font.family'] = 'Times New Roman' # 全体のフォント
     plt.rcParams['font.size'] = 22                  # フォントサイズ
     plt.rcParams['axes.linewidth'] = 1              # 軸の太さ
-    fig.subplots_adjust(left=0.15, bottom=0.15)     # 左と下の余白を増やす
     # EPS出力のためのおまじない
     plt.rcParams['ps.useafm'] = True
     plt.rcParams['pdf.use14corefonts'] = True
     plt.rcParams['text.usetex'] = True
 
+    fig = plt.figure()
+    fig.subplots_adjust(left=0.15, bottom=0.15)     # 左と下の余白を増やす
+    plt.xlabel("Time $t$ [ms]")
+    plt.ylabel("Generalized cross correlation")
+    plt.plot(timebox, gcc,
+             marker='',
+             linestyle='-',
+             )
     plt.savefig(outname)
 
     return
