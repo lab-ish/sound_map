@@ -15,21 +15,7 @@ import wave_data
 import signal_process
 
 #======================================================================
-if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        sys.stderr.write("Usage: python %s <wavefile> [offset=0]\n" % sys.argv[0])
-        quit()
-    offset = 0
-    if len(sys.argv) >= 3:
-        offset = int(sys.argv[2])
-
-    # データ読み込み
-    wavefile = sys.argv[1]
-    data = wave_data.WaveData(wavefile)
-
-    # データ処理
-    sig = signal_process.SignalProcess(data.left, data.right)
-
+def single_plot(sig, outname, offset):
     #------------------------------
     # gcc-phatを手動で呼ぶ
     fft_data1 = sig.fft(sig.data1, offset)
@@ -50,9 +36,6 @@ if __name__ == '__main__':
     # gccの横軸はindex番号になっているので時刻を計算しておく
     timebox = np.arange(-sig.winsize/2, sig.winsize/2) * 1e3 / data.sample_rate
 
-    # ファイル名はbasenameを使う（拡張子を変更したものにする）
-    outname = os.path.splitext(wavefile)[0] + '.eps'
-
     # plot
     fig = plt.figure()
     plt.plot(timebox, gcc,
@@ -72,3 +55,32 @@ if __name__ == '__main__':
     plt.rcParams['text.usetex'] = True
 
     plt.savefig(outname)
+
+    return
+
+#======================================================================
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        sys.stderr.write("Usage: python %s <wavefile> [offset=0] [offset2] ...\n" % sys.argv[0])
+        quit()
+    offsets = []
+    if len(sys.argv) >= 3:
+        for s in sys.argv[2:len(sys.argv)]:
+            offsets.append(int(s))
+    # オフセット指定がないときは0だけ
+    if len(offsets) == 0:
+        offsets.append(0)
+
+    # データ読み込み
+    wavefile = sys.argv[1]
+    data = wave_data.WaveData(wavefile)
+
+    # データ処理
+    sig = signal_process.SignalProcess(data.left, data.right)
+
+    for offset in offsets:
+        # 出力ファイル名はbasename+オフセットを使う（拡張子を変更したものにする）
+        single_plot(sig,
+                    os.path.splitext(wavefile)[0] + '_' + str(offset) + '.eps',
+                    offset
+                    )
