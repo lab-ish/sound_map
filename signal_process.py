@@ -10,7 +10,7 @@ import sys
 import numpy as np
 
 #======================================================================
-class SignalProcess():
+class SignalProcess(object):
     # winsize: FFT windowサイズ
     # shift  : FFT windowをシフトするサイズ
     def __init__(self, data1, data2, winsize=512, shift=128):
