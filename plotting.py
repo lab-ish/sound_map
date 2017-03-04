@@ -47,6 +47,11 @@ def single_plot(sig, outname, offset):
     plt.rcParams['text.usetex'] = True
 
     fig = plt.figure()
+    ax = fig.add_subplot(111)
+    # 図全体の背景を透明に
+    fig.patch.set_alpha(0)
+    # subplotの背景を透明に
+    ax.patch.set_alpha(0)
     fig.subplots_adjust(left=0.15, bottom=0.15)     # 左と下の余白を増やす
     plt.xlabel("Time $t$ [ms]")
     plt.ylabel("Generalized cross correlation")
