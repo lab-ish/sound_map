@@ -15,7 +15,7 @@ import wave_data
 import signal_process
 
 #======================================================================
-def single_plot(sig, outname, offset):
+def single_plot(sig, offset, xrange=None, newfig=True):
     #------------------------------
     # gcc-phatを手動で呼ぶ
     fft_data1 = sig.fft(sig.data1, offset)
@@ -46,46 +46,62 @@ def single_plot(sig, outname, offset):
     plt.rcParams['pdf.use14corefonts'] = True
     plt.rcParams['text.usetex'] = True
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    # 図全体の背景を透明に
-    fig.patch.set_alpha(0)
-    # subplotの背景を透明に
-    ax.patch.set_alpha(0)
-    fig.subplots_adjust(left=0.15, bottom=0.15)     # 左と下の余白を増やす
-    plt.xlabel("Time $t$ [ms]")
-    plt.ylabel("Generalized cross correlation")
+    if newfig:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        # 図全体の背景を透明に
+        fig.patch.set_alpha(0)
+        # subplotの背景を透明に
+        ax.patch.set_alpha(0)
+        fig.subplots_adjust(left=0.15, bottom=0.15)     # 左と下の余白を増やす
+        plt.xlabel("Sound delay [ms]")
+        plt.ylabel("GCC")
+
+    if xrange is not None:
+        plt.xlim(xrange)
+
     plt.plot(timebox, gcc,
              marker='',
              linestyle='-',
              )
-    plt.savefig(outname)
-
     return
+
+#----------------------------------------------------------------------
+# 引数処理
+def arg_parser():
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("wavefile", type=str, action="store",
+                    help="wavefile",
+                    )
+    ap.add_argument("-s", "--simul", action="store_true",
+                    help="Plot on the same plot",
+                    )
+    ap.add_argument("offset", type=int, action="store", nargs="*",
+                    default=[0],
+                    help="Set of offset values for plotting (default: 0)",
+                    )
+    return ap
 
 #======================================================================
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        sys.stderr.write("Usage: python %s <wavefile> [offset=0] [offset2] ...\n" % sys.argv[0])
-        quit()
-    offsets = []
-    if len(sys.argv) >= 3:
-        for s in sys.argv[2:len(sys.argv)]:
-            offsets.append(int(s))
-    # オフセット指定がないときは0だけ
-    if len(offsets) == 0:
-        offsets.append(0)
+    parser = arg_parser()
+    args = parser.parse_args()
 
     # データ読み込み
-    wavefile = sys.argv[1]
-    data = wave_data.WaveData(wavefile)
+    data = wave_data.WaveData(args.wavefile)
 
     # データ処理
     sig = signal_process.SignalProcess(data.left, data.right)
 
-    for offset in offsets:
-        # 出力ファイル名はbasename+オフセットを使う（拡張子を変更したものにする）
-        single_plot(sig,
-                    os.path.splitext(wavefile)[0] + '_' + str(offset) + '.eps',
-                    offset
-                    )
+    if args.simul:
+        single_plot(sig, args.offset[0], [-1.5, 1.5])
+        for offset in args.offset[1:len(args.offset)]:
+            single_plot(sig, offset, [-1.5, 1.5], False)
+        # 出力ファイル名はbasename_simulを使う（拡張子を変更したものにする）
+        plt.savefig(os.path.splitext(args.wavefile)[0] + '_simul.eps')
+    else:
+        for offset in args.offset:
+            single_plot(sig, offset, [-1.5, 1.5])
+            # 出力ファイル名はbasename+オフセットを使う（拡張子を変更したものにする）
+            plt.savefig(os.path.splitext(args.wavefile)[0] + '_' + str(offset) + '.eps')

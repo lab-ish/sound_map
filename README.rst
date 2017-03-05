@@ -38,10 +38,17 @@ GCC結果をグラフ化するためには ``plotting.py`` を使用する。
 
 データをどの位置をグラフ化するかは ``offset`` で指定する。
 ``offset`` はウィンドウに区切ったデータの何番目を使うかであり、デフォルトは0である。
+複数の ``offset`` を指定するとそれぞれのプロットを出力する。
 
 .. code-block:: bash
 
    % python plotting.py <wavefile> [offset]
+
+1つの図に複数のプロットを描く場合には ``-s`` オプションを指定する。
+
+.. code-block:: bash
+
+   % python plotting.py -s <wavefile> [offset1] [offset2] ...
 
 注意事項
 ========
