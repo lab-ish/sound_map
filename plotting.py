@@ -15,7 +15,7 @@ import wave_data
 import signal_process
 
 #======================================================================
-def single_plot(sig, offset, xrange=None, newfig=True):
+def gcc_time(sig, offset, samp_rate):
     #------------------------------
     # gcc-phatを手動で呼ぶ
     fft_data1 = sig.fft(sig.data1, offset)
@@ -34,8 +34,12 @@ def single_plot(sig, offset, xrange=None, newfig=True):
     gcc = np.real(gcc)
 
     # gccの横軸はindex番号になっているので時刻を計算しておく
-    timebox = np.arange(-sig.winsize/2, sig.winsize/2) * 1e3 / data.sample_rate
+    timebox = np.arange(-sig.winsize/2, sig.winsize/2) * 1e3 / samp_rate
 
+    return (gcc, timebox)
+
+#--------------------------------------------------
+def single_plot(gcc, timebox, xrange=None, newfig=True):
     # plot
     # プロットの調整
     plt.rcParams['font.family'] = 'Times New Roman' # 全体のフォント
@@ -77,6 +81,9 @@ def arg_parser():
     ap.add_argument("-s", "--simul", action="store_true",
                     help="Plot on the same plot",
                     )
+    ap.add_argument("-a", "--add", action="store_true",
+                    help="Sum up GCC results",
+                    )
     ap.add_argument("offset", type=int, action="store", nargs="*",
                     default=[0],
                     help="Set of offset values for plotting (default: 0)",
@@ -95,13 +102,25 @@ if __name__ == '__main__':
     sig = signal_process.SignalProcess(data.left, data.right)
 
     if args.simul:
-        single_plot(sig, args.offset[0], [-1.5, 1.5])
+        gcc, timebox = gcc_time(sig, args.offset[0], data.sample_rate)
+        single_plot(gcc, timebox, [-1.5, 1.5])
         for offset in args.offset[1:len(args.offset)]:
-            single_plot(sig, offset, [-1.5, 1.5], False)
-        # 出力ファイル名はbasename_simulを使う（拡張子を変更したものにする）
+            gcc, timebox = gcc_time(sig, offset, data.sample_rate)
+            single_plot(gcc, timebox, [-1.5, 1.5], False)
+        # 出力ファイル名はbasename_simulを使う
         plt.savefig(os.path.splitext(args.wavefile)[0] + '_simul.eps')
-    else:
+    if args.add:
+        gcc_sum, timebox = gcc_time(sig, args.offset[0], data.sample_rate)
+        for offset in args.offset[1:len(args.offset)]:
+            gcc, timebox = gcc_time(sig, offset, data.sample_rate)
+            gcc_sum += gcc
+        single_plot(gcc_sum, timebox, [-1.5, 1.5])
+        # 出力ファイル名はbasename_sumを使う
+        plt.savefig(os.path.splitext(args.wavefile)[0] + '_sum.eps')
+
+    if not (args.simul or args.add):
         for offset in args.offset:
-            single_plot(sig, offset, [-1.5, 1.5])
-            # 出力ファイル名はbasename+オフセットを使う（拡張子を変更したものにする）
+            gcc, timebox = gcc_time(sig, offset, data.sample_rate)
+            single_plot(gcc, timebox, [-1.5, 1.5])
+            # 出力ファイル名はbasename+オフセットを使う
             plt.savefig(os.path.splitext(args.wavefile)[0] + '_' + str(offset) + '.eps')
