@@ -12,9 +12,6 @@ Required Libraries
 * wave
 * numpy
 * scipy
-* peakutils
-
-  * for enhanced sound mapping
 
 Usage
 =====

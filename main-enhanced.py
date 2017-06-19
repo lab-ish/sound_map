@@ -31,8 +31,8 @@ if __name__ == '__main__':
     data = wave_data.WaveData(wavefile)
 
     # データ処理
-    sig  = signal_process.SignalProcess(data.left, data.right)
-    esig = esignal_process.ESignalProcess(data.left, data.right)
+    sig = signal_process.SignalProcess(data.left, data.right, data.sample_rate)
+    esig = esignal_process.ESignalProcess(data.left, data.right, data.sample_rate)
     sound_map  = sig()
     esound_map = esig()
 

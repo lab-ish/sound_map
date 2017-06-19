@@ -15,8 +15,9 @@ import signal_process
 class ESignalProcess(signal_process.SignalProcess):
     # winsize: FFT windowサイズ
     # shift  : FFT windowをシフトするサイズ
-    def __init__(self, data1, data2, winsize=512, shift=128, avg_len=8):
-        super(ESignalProcess, self).__init__(data1, data2, winsize, shift)
+    def __init__(self, data1, data2, samp_rate=48e3, winsize=512, shift=128,
+                 mic_sep=0.5, avg_len=8):
+        super(ESignalProcess, self).__init__(data1, data2, samp_rate, winsize, shift, mic_sep)
 
         # Enhanced sound mappingで平均化する長さ
         self.avg_len = avg_len
