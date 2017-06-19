@@ -16,7 +16,7 @@ class SignalProcess(object):
     def __init__(self, data1, data2, winsize=512, shift=128):
         # シフトサイズの倍数がFFT windowサイズであるかチェック
         if winsize % shift != 0:
-            sys.stderr.write("Invalid shift size: window size is a multiple of shift size.\n")
+            sys.stderr.write("Invalid shift size: window size is not a multiple of shift size.\n")
             raise ValueError
         self.winsize = winsize
         self.shift   = shift
