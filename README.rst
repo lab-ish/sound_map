@@ -12,6 +12,9 @@ Required Libraries
 * wave
 * numpy
 * scipy
+* peakutils
+
+  * for enhanced sound mapping
 
 Usage
 =====
@@ -19,13 +22,16 @@ Usage
 基本的な使い方
 --------------
 
-:code:`python main.py <wavefile>` のように音声のwavファイルを指定して実行する。
+``python main.py <wavefile>`` のように音声のwavファイルを指定して実行する。
 Sound mapデータはwavファイルの拡張子を ``.dat`` に変更したものに書き出される。
 出力先を変更したい場合は出力先ファイル名を指定する。
 
 .. code-block:: bash
 
    % python main.py <wavefile> [soundmap_out]
+
+拡張Sound mapを得る場合は ``main-enhanced.py`` を用いる。
+拡張Sound mapデータはwavファイルの拡張子 ``_enhanced.dat`` に変更したものに書き出される。
 
 GCC結果のグラフ化
 -----------------
