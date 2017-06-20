@@ -13,7 +13,7 @@ from sklearn.decomposition import PCA
 
 #======================================================================
 class NoiseReduction():
-    def __init__(self, data, winsize=512, shift=512, n_comp=20):
+    def __init__(self, data, winsize=512, shift=512, n_comp=25):
         self.winsize = winsize
         self.shift   = shift
         self.folds   = self.winsize / self.shift
@@ -27,11 +27,21 @@ class NoiseReduction():
         return
 
     #--------------------------------------------------
-    def pca_train(self, data):
-        self.pca = PCA(n_components=n_comp)
+    def pca_train(self, data, savefile=None):
+        self.pca = PCA(n_components=self.n_comp)
         end = self.data.shape[0]-self.folds
-        self.fft_data = np.array([self.fft(offset) for offset in range(0,end)])
-        return
+        # FFT結果の格納先
+        self.fft_data = np.zeros(self.winsize/16*end).reshape(end,self.winsize/16)
+        for cnt in range(end):
+            self.fft_data[cnt,:] = self.fft(data, cnt)
+
+        # PCA
+        transformed = self.pca.fit_transform(self.fft_data)
+
+        # 出力先が指定されているならばファイルに保存
+        if savefile is not None:
+            joblib.dump(self.pca, savefile)
+        return transformed
 
     #--------------------------------------------------
     def fft(self, data, offset=0):
@@ -47,12 +57,10 @@ class NoiseReduction():
         #   （虚部がマイナスなだけで同じもの）
         fft_ret = np.fft.fft(win_data)[0:self.winsize/2]
 
-        # 帯域の1/8のLPFをかける
-        lowpass = np.append(np.ones(self.winsize/16),
-                            np.zeros(self.winsize/16))
-        fft_ret = lowpass * fft_ret
+        # 帯域の1/8のLPFをかけるので、後半を捨てる
+        fft_ret = fft_ret[0:self.winsize/16]
 
-        return fft_ret
+        return np.abs(fft_ret)**2
 
     #--------------------------------------------------
     def __del__(self):
