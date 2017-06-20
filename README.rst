@@ -12,6 +12,9 @@ Required Libraries
 * wave
 * numpy
 * scipy
+* scikit-learn
+
+  * for noise reduction
 
 Usage
 =====
