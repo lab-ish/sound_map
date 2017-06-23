@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from sklearn.externals import joblib
 from sklearn.decomposition import PCA
+from sklearn.linear_model import LogisticRegression as LR
 
 #======================================================================
 class NoiseReduction():
@@ -49,7 +50,7 @@ class NoiseReduction():
     #--------------------------------------------------
     # Logistic regressionの学習
     #   真値ファイルをあらかじめ読み込んでおくこと
-    def lr_train(self, train_idx=0):
+    def lr_train(self, train_idx, savefile=None):
         # 真値ファイルを読み込んでいない場合は学習不能
         if self.truth is None:
             return False
@@ -66,7 +67,7 @@ class NoiseReduction():
             train_data = self.truth[blk_size*train_idx:blk_size*(train_idx+1)]
         train_data = train_data.reset_index(drop=True)
 
-        # 偽部分の学習データを作成
+        # 偽部分の開始位置と終端位置を計算
         false_data = np.zeros(2*(len(train_data)-1), 'int').reshape(-1,2)
         for cnt in range(len(train_data)-1):
             false_data[cnt,:] = np.array(self.false_idx(train_data.loc[cnt], train_data.loc[cnt+1]))
@@ -76,7 +77,28 @@ class NoiseReduction():
                                   columns=('start_idx', 'end_idx'),
                                   )
 
+        # 学習データを切り出し
+        length = train_data.apply(
+            lambda x: x.end_idx - x.start_idx,
+            axis=1
+            ).sum()
+        train_fft_data = np.zeros(length*self.winsize/16).reshape(-1,self.winsize/16)
+        idx = 0
+        for cnt in range(len(train_data)):
+            train_fft_data[idx:idx+train_data.loc[cnt].end_idx-train_data.loc[cnt].start_idx] = \
+              self.fft_data[train_data.loc[cnt].start_idx:train_data.loc[cnt].end_idx,:]
+            idx += train_data.loc[cnt].end_idx-train_data.loc[cnt].start_idx
+
         return [train_data, false_data]
+
+        # LR学習
+        self.lr = LR(C=1, solver='lbfgs', max_iter=100).fit(train_data, false_data)
+
+        # 出力先が指定されているならばファイルに保存
+        if savefile is not None:
+            joblib.dump(self.lr, savefile)
+
+        return self.lr.score(train_data, false_data)
 
     #--------------------------------------------------
     def load_truth(self, truth_file, duration=2):
