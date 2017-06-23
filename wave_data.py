@@ -14,7 +14,7 @@ from scipy import signal as sp
 
 #======================================================================
 class WaveData():
-    def __init__(self, datafile):
+    def __init__(self, datafile, decimate=4):
         # データファイル名を保存
         self.datafile = datafile
 
@@ -65,7 +65,8 @@ class WaveData():
         # ステレオデータの場合には折り返しておく: [0,:]=left, [1,:]=right
         self.raw_data = self.raw_data.reshape(-1,ch).transpose()
 
-        self.__downsample()
+        if decimate:
+            self.__downsample(decimate)
 
         if ch == 2:
             self.left  = self.raw_data[0]
@@ -79,6 +80,8 @@ class WaveData():
     #--------------------------------------------------
     # downsampling
     def __downsample(self, factor=4):
+        if factor == 1:
+            return
         self.raw_data = sp.decimate(self.raw_data, factor, axis=1)
         self.sample_rate /= factor
         self.sample_timelen *= factor
