@@ -24,8 +24,9 @@ class NoiseReduction():
         self.n_comp  = n_comp           # PCAの成分数
 
         # データの長さがシフトサイズの倍数でない場合には最後をカット
+        self.data = data
         if len(data) % self.shift != 0:
-            self.data = data[0:-(len(data) % self.shift)]
+            self.data = self.data[0:-(len(self.data) % self.shift)]
         # シフトサイズで折り返したテーブルを作成
         self.data = self.data.reshape(-1,self.shift)
 
@@ -62,9 +63,13 @@ class NoiseReduction():
         #   最後の要素の場合は余っている部分全て
         train_data = None
         if train_idx == self.div - 1:
-            train_data = self.truth[blk_size*train_idx:end]
+            train_data = self.truth[blk_size*train_idx:len(self.truth)]
+        elif train_idx > self.div - 1 or train_idx < 0:
+            return False
         else:
             train_data = self.truth[blk_size*train_idx:blk_size*(train_idx+1)]
+        if len(train_data) == 0:
+            return False
         train_data = train_data.reset_index(drop=True)
 
         # 偽部分の開始位置と終端位置を計算
@@ -78,27 +83,37 @@ class NoiseReduction():
                                   )
 
         # 学習データを切り出し
-        length = train_data.apply(
-            lambda x: x.end_idx - x.start_idx,
-            axis=1
-            ).sum()
-        train_fft_data = np.zeros(length*self.winsize/16).reshape(-1,self.winsize/16)
-        idx = 0
-        for cnt in range(len(train_data)):
-            train_fft_data[idx:idx+train_data.loc[cnt].end_idx-train_data.loc[cnt].start_idx] = \
-              self.fft_data[train_data.loc[cnt].start_idx:train_data.loc[cnt].end_idx,:]
-            idx += train_data.loc[cnt].end_idx-train_data.loc[cnt].start_idx
-
-        return [train_data, false_data]
+        #   真
+        train_fft_data = self.extract_data(train_data)
+        #   偽
+        false_fft_data = self.extract_data(false_data)
+        # 真偽データ
+        true_false = np.append(np.ones(train_fft_data.shape[0], 'uint8'),
+                               np.zeros(false_fft_data.shape[0], 'uint8'))
 
         # LR学習
-        self.lr = LR(C=1, solver='lbfgs', max_iter=100).fit(train_data, false_data)
+        self.lr = LR(C=1, solver='lbfgs', max_iter=100).fit(np.r_[train_fft_data, false_fft_data],
+                                                            true_false)
 
         # 出力先が指定されているならばファイルに保存
         if savefile is not None:
             joblib.dump(self.lr, savefile)
 
-        return self.lr.score(train_data, false_data)
+        return True
+
+    #--------------------------------------------------
+    def extract_data(self, train_df):
+        length = train_df.apply(
+            lambda x: x.end_idx - x.start_idx,
+            axis=1
+            ).sum()
+        fft_data = np.zeros(length*self.winsize/16).reshape(-1,self.winsize/16)
+        idx = 0
+        for cnt in range(len(train_df)):
+            fft_data[idx:idx+train_df.loc[cnt].end_idx-train_df.loc[cnt].start_idx] = \
+              self.fft_data[train_df.loc[cnt].start_idx:train_df.loc[cnt].end_idx,:]
+            idx += train_df.loc[cnt].end_idx-train_df.loc[cnt].start_idx
+        return fft_data
 
     #--------------------------------------------------
     def load_truth(self, truth_file, duration=2):
