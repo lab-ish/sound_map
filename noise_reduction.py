@@ -34,10 +34,15 @@ class NoiseReduction():
         self.fft_timebox = 1.0 * self.shift / self.samp_rate
 
         self.truth = None
+
+        self._fft_flag = False          # FFTが完了しているかどうか
         return
 
     #--------------------------------------------------
     def fft_all(self):
+        if self._fft_flag:
+            return
+
         end = self.data.shape[0]-self.folds
         # FFT結果の格納先
         self.fft_data = np.zeros(self.winsize/16*end).reshape(end,self.winsize/16)
@@ -46,7 +51,62 @@ class NoiseReduction():
             # データは折り返してあるので、必要行数を取り出してから1行に変換してFFT
             self.fft_data[offset,:] = self.fft(self.data[offset:offset+self.folds].reshape(1,-1)[0])
 
+        self._fft_flag = True
         return
+
+    #--------------------------------------------------
+    # 全データでcross-validation
+    def lr_cross_validation(self):
+        self.fft_all()
+        results = pd.DataFrame(columns=('tp', 'fn', 'fp', 'tn',
+                                        'accuracy', 'precision', 'recall', 'f_measure'))
+        for cnt in range(self.div):
+            results = results.append(
+                pd.Series(self.lr_test(cnt),
+                          index=('tp', 'fn', 'fp', 'tn',
+                                 'accuracy', 'precision', 'recall', 'f_measure')),
+                ignore_index=True)
+
+        return results
+
+    #--------------------------------------------------
+    # cross-validationのindex番号を指定して評価
+    def lr_test(self, train_idx):
+        # cross-validationのindex番号が範囲を超えているときはテスト不能
+        if train_idx >= self.div or train_idx < 0:
+            return False
+
+        idx = range(self.div)
+        # 学習
+        if not self.lr_train(idx.pop(train_idx)):
+            return False
+
+        # テストデータを連結
+        test_data = np.empty([0, self.winsize/16])
+        true_val  = np.empty(0, dtype='int8')
+        for cnt in idx:
+            x = self.partial_get_data(cnt)
+            if x[0] is not None:
+                test_data = np.r_[test_data, x[0]]
+                true_val  = np.append(true_val, x[1])
+
+        # Logistic regression
+        #   左列: 推定値、右列: 真値
+        results = np.c_[self.lr.predict(test_data),
+                        true_val]
+        # true positive, false negative, false positive, true negativeの数
+        tp = len((results[:,0] & results[:,1] ==  1).nonzero()[0])  # 11
+        fn = len((results[:,0] - results[:,1] == -1).nonzero()[0])  # 01
+        fp = len((results[:,0] - results[:,1] ==  1).nonzero()[0])  # 10
+        tn = len((results[:,0] | results[:,1] ==  0).nonzero()[0])  # 00
+
+        # accuracy, precision, recall, f-measure
+        accuracy  = 1.0*(tp+tn)/(tp+fp+fn+tn)
+        precision = 1.0*tp/(tp+fp)
+        recall    = 1.0*tp/(tp+fn)
+        f_measure = 2.0*precision*recall/(precision+recall)
+
+        return [tp, fn, fp, tn, accuracy, precision, recall, f_measure]
 
     #--------------------------------------------------
     # Logistic regressionの学習
