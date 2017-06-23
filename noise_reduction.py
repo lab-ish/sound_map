@@ -55,7 +55,7 @@ class NoiseReduction():
         # 真値ファイルを読み込んでいない場合は学習不能
         if self.truth is None:
             return False
-        # cross-validationのindex番号が範囲を超えているときは
+        # cross-validationのindex番号が範囲を超えているときは学習不能
         if train_idx >= self.div or train_idx < 0:
             return False
 
@@ -72,11 +72,13 @@ class NoiseReduction():
         return True
 
     #--------------------------------------------------
+    # データを分割し、train_idxで指定された部分のデータに関して
+    # 車両通過時・非通過時のFFTデータと通過有無データを取得する
     def partial_get_data(self, train_idx):
         # 真値を検定分割数で分割
         blk_size = int(np.round(1.0 * len(self.truth) / self.div))
 
-        # 学習用データにする真値を切り出し
+        # 対象の真値を切り出し
         #   最後の要素の場合は余っている部分全て
         true_data = None
         if train_idx == self.div - 1:
@@ -88,29 +90,30 @@ class NoiseReduction():
             return [None, None]
         true_data = true_data.reset_index(drop=True)
 
-        # 偽部分の開始位置と終端位置を計算
+        # 車両非通過時のFFTデータ開始・終端位置を計算
         false_data = np.zeros(2*(len(true_data)-1), 'int').reshape(-1,2)
         for cnt in range(len(true_data)-1):
-            false_data[cnt,:] = np.array(self.false_idx(true_data.loc[cnt], true_data.loc[cnt+1]))
+            false_data[cnt,:] = np.array(self.no_vehicle_idx(true_data.loc[cnt], true_data.loc[cnt+1]))
         false_data = false_data[false_data[:,0] != false_data[:,1],:]
-
+        # データフレームに変換しておく
         false_data = pd.DataFrame(false_data,
                                   columns=('start_idx', 'end_idx'),
                                   )
 
-        # 学習データを切り出し
-        #   真
-        true_fft = self.extract_data(true_data)
-        #   偽
-        false_fft = self.extract_data(false_data)
-        # 真偽データ
+        # FFTデータを切り出し
+        # 通過時
+        true_fft = self.ext_fft_data(true_data)
+        # 非通過時
+        false_fft = self.ext_fft_data(false_data)
+        # 通過有無
         true_false = np.append(np.ones(true_fft.shape[0], 'int8'),
                                np.zeros(false_fft.shape[0], 'int8'))
         return [np.r_[true_fft, false_fft], true_false]
 
     #--------------------------------------------------
-    def extract_data(self, train_df):
-        # 与えられたDataFrammeのstart_idx, end_idxで指定されたFFTデータを切り出し
+    def ext_fft_data(self, train_df):
+        # 与えられたDataFrameのstart_idx, end_idxで指定された部分の
+        # FFTデータを切り出し
         length = train_df.apply(
             lambda x: x.end_idx - x.start_idx,
             axis=1
@@ -139,16 +142,18 @@ class NoiseReduction():
         # 時刻順に並べ替え
         self.truth = self.truth.sort_values('time').reset_index(drop=True)
 
+        # 車両通過の開始・終端位置を計算（FFTデータのindex）
         # 検出時刻の前後合計duration秒に車両音が含まれているとする
         self.truth['start_end'] = self.truth.time.apply(
-            lambda x: self.true_idx(x, duration))
+            lambda x: self.vehicle_idx(x, duration))
         self.truth['start_idx'] = self.truth.start_end.apply(lambda x: x[0])
         self.truth['end_idx']   = self.truth.start_end.apply(lambda x: x[1])
         self.truth = self.truth.drop('start_end', axis=1)
         return
 
     #--------------------------------------------------
-    def true_idx(self, time, duration):
+    # 車両通過時のFFTデータの開始終端index（FFTデータの）
+    def vehicle_idx(self, time, duration):
         center = time / self.fft_timebox
         dur    = duration/ 2 / self.fft_timebox
         start  = int(center - dur)
@@ -158,7 +163,8 @@ class NoiseReduction():
         return [start, end]
 
     #--------------------------------------------------
-    def false_idx(self, prv, nxt, guard=1):
+    # 非車両通過時のFFTデータの開始・終端index（FFTデータの）
+    def no_vehicle_idx(self, prv, nxt, guard=2):
         # 間隔が短い場合は破棄
         if nxt.start_idx - prv.end_idx <= int(guard/self.fft_timebox) * 2:
             return [0, 0]
