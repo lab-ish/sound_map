@@ -59,12 +59,14 @@ class NoiseReduction():
     def lr_cross_validation(self):
         self.fft_all()
         results = pd.DataFrame(columns=('tp', 'fn', 'fp', 'tn',
-                                        'accuracy', 'precision', 'recall', 'f_measure'))
+                                        'accuracy', 'precision', 'recall', 'f_measure',
+                                        'train_len', 'test_len'))
         for cnt in range(self.div):
             results = results.append(
                 pd.Series(self.lr_test(cnt),
                           index=('tp', 'fn', 'fp', 'tn',
-                                 'accuracy', 'precision', 'recall', 'f_measure')),
+                                 'accuracy', 'precision', 'recall', 'f_measure',
+                                 'train_len', 'test_len')),
                 ignore_index=True)
 
         return results
@@ -78,17 +80,20 @@ class NoiseReduction():
 
         idx = range(self.div)
         # 学習
-        if not self.lr_train(idx.pop(train_idx)):
+        train_len = self.lr_train(idx.pop(train_idx))
+        if not train_len:
             return False
 
         # テストデータを連結
         test_data = np.empty([0, self.winsize/16])
         true_val  = np.empty(0, dtype='int8')
+        test_len  = 0
         for cnt in idx:
             x = self.partial_get_data(cnt)
             if x[0] is not None:
                 test_data = np.r_[test_data, x[0]]
                 true_val  = np.append(true_val, x[1])
+                test_len += x[2]
 
         # Logistic regression
         #   左列: 推定値、右列: 真値
@@ -106,7 +111,9 @@ class NoiseReduction():
         recall    = 1.0*tp/(tp+fn)
         f_measure = 2.0*precision*recall/(precision+recall)
 
-        return [tp, fn, fp, tn, accuracy, precision, recall, f_measure]
+        return [tp, fn, fp, tn,
+                accuracy, precision, recall, f_measure,
+                train_len, test_len]
 
     #--------------------------------------------------
     # Logistic regressionの学習
@@ -120,7 +127,7 @@ class NoiseReduction():
             return False
 
         # 学習データを抽出
-        train_data, true_false = self.partial_get_data(train_idx)
+        train_data, true_false, time_len = self.partial_get_data(train_idx)
 
         # LR学習
         self.lr = LR(C=1, solver='lbfgs', max_iter=100).fit(train_data, true_false)
@@ -129,7 +136,7 @@ class NoiseReduction():
         if savefile is not None:
             joblib.dump(self.lr, savefile)
 
-        return True
+        return time_len
 
     #--------------------------------------------------
     # データを分割し、train_idxで指定された部分のデータに関して
@@ -168,7 +175,10 @@ class NoiseReduction():
         # 通過有無
         true_false = np.append(np.ones(true_fft.shape[0], 'int8'),
                                np.zeros(false_fft.shape[0], 'int8'))
-        return [np.r_[true_fft, false_fft], true_false]
+        return [np.r_[true_fft, false_fft],
+                true_false,
+                true_data.time[len(true_data)-1] - true_data.time[0],
+                ]
 
     #--------------------------------------------------
     def ext_fft_data(self, train_df):
@@ -224,7 +234,7 @@ class NoiseReduction():
 
     #--------------------------------------------------
     # 非車両通過時のFFTデータの開始・終端index（FFTデータの）
-    def no_vehicle_idx(self, prv, nxt, guard=2):
+    def no_vehicle_idx(self, prv, nxt, guard=4):
         # 間隔が短い場合は破棄
         if nxt.start_idx - prv.end_idx <= int(guard/self.fft_timebox) * 2:
             return [0, 0]
