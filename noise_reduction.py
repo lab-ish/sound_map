@@ -55,45 +55,15 @@ class NoiseReduction():
         # 真値ファイルを読み込んでいない場合は学習不能
         if self.truth is None:
             return False
-
-        # 真値を検定分割数で分割
-        blk_size = int(np.round(1.0 * len(self.truth) / self.div))
-
-        # 学習用データにする真値を切り出し
-        #   最後の要素の場合は余っている部分全て
-        train_data = None
-        if train_idx == self.div - 1:
-            train_data = self.truth[blk_size*train_idx:len(self.truth)]
-        elif train_idx > self.div - 1 or train_idx < 0:
+        # cross-validationのindex番号が範囲を超えているときは
+        if train_idx >= self.div or train_idx < 0:
             return False
-        else:
-            train_data = self.truth[blk_size*train_idx:blk_size*(train_idx+1)]
-        if len(train_data) == 0:
-            return False
-        train_data = train_data.reset_index(drop=True)
 
-        # 偽部分の開始位置と終端位置を計算
-        false_data = np.zeros(2*(len(train_data)-1), 'int').reshape(-1,2)
-        for cnt in range(len(train_data)-1):
-            false_data[cnt,:] = np.array(self.false_idx(train_data.loc[cnt], train_data.loc[cnt+1]))
-        false_data = false_data[false_data[:,0] != false_data[:,1],:]
-
-        false_data = pd.DataFrame(false_data,
-                                  columns=('start_idx', 'end_idx'),
-                                  )
-
-        # 学習データを切り出し
-        #   真
-        train_fft_data = self.extract_data(train_data)
-        #   偽
-        false_fft_data = self.extract_data(false_data)
-        # 真偽データ
-        true_false = np.append(np.ones(train_fft_data.shape[0], 'uint8'),
-                               np.zeros(false_fft_data.shape[0], 'uint8'))
+        # 学習データを抽出
+        train_data, true_false = self.partial_get_data(train_idx)
 
         # LR学習
-        self.lr = LR(C=1, solver='lbfgs', max_iter=100).fit(np.r_[train_fft_data, false_fft_data],
-                                                            true_false)
+        self.lr = LR(C=1, solver='lbfgs', max_iter=100).fit(train_data, true_false)
 
         # 出力先が指定されているならばファイルに保存
         if savefile is not None:
@@ -102,7 +72,45 @@ class NoiseReduction():
         return True
 
     #--------------------------------------------------
+    def partial_get_data(self, train_idx):
+        # 真値を検定分割数で分割
+        blk_size = int(np.round(1.0 * len(self.truth) / self.div))
+
+        # 学習用データにする真値を切り出し
+        #   最後の要素の場合は余っている部分全て
+        true_data = None
+        if train_idx == self.div - 1:
+            true_data = self.truth[blk_size*train_idx:len(self.truth)]
+        else:
+            true_data = self.truth[blk_size*train_idx:blk_size*(train_idx+1)]
+
+        if len(true_data) == 0:
+            return [None, None]
+        true_data = true_data.reset_index(drop=True)
+
+        # 偽部分の開始位置と終端位置を計算
+        false_data = np.zeros(2*(len(true_data)-1), 'int').reshape(-1,2)
+        for cnt in range(len(true_data)-1):
+            false_data[cnt,:] = np.array(self.false_idx(true_data.loc[cnt], true_data.loc[cnt+1]))
+        false_data = false_data[false_data[:,0] != false_data[:,1],:]
+
+        false_data = pd.DataFrame(false_data,
+                                  columns=('start_idx', 'end_idx'),
+                                  )
+
+        # 学習データを切り出し
+        #   真
+        true_fft = self.extract_data(true_data)
+        #   偽
+        false_fft = self.extract_data(false_data)
+        # 真偽データ
+        true_false = np.append(np.ones(true_fft.shape[0], 'int8'),
+                               np.zeros(false_fft.shape[0], 'int8'))
+        return [np.r_[true_fft, false_fft], true_false]
+
+    #--------------------------------------------------
     def extract_data(self, train_df):
+        # 与えられたDataFrammeのstart_idx, end_idxで指定されたFFTデータを切り出し
         length = train_df.apply(
             lambda x: x.end_idx - x.start_idx,
             axis=1
@@ -152,7 +160,7 @@ class NoiseReduction():
     #--------------------------------------------------
     def false_idx(self, prv, nxt, guard=1):
         # 間隔が短い場合は破棄
-        if nxt.time - prv.time <= guard * 2:
+        if nxt.start_idx - prv.end_idx <= int(guard/self.fft_timebox) * 2:
             return [0, 0]
         start = prv.end_idx   + int(guard/self.fft_timebox)
         end   = nxt.start_idx - int(guard/self.fft_timebox)
@@ -167,13 +175,7 @@ class NoiseReduction():
         return self.pca.transform(data)
 
     #--------------------------------------------------
-    def pca_load(self, pca_file):
-        self.pca = joblib.load(pca_file)
-        self.n_comp = self.pca.n_components_
-        return
-
-    #--------------------------------------------------
-    def pca_train(self, data, savefile=None):
+    def pca_train(self, savefile=None):
         self.pca = PCA(n_components=self.n_comp)
 
         # PCA
@@ -184,6 +186,17 @@ class NoiseReduction():
             joblib.dump(self.pca, savefile)
 
         return transformed
+
+    #--------------------------------------------------
+    def pca_load(self, pca_file):
+        self.pca = joblib.load(pca_file)
+        self.n_comp = self.pca.n_components_
+        return
+
+    #--------------------------------------------------
+    def lr_load(self, lr_file):
+        self.lr = joblib.load(lr_file)
+        return
 
     #--------------------------------------------------
     def fft(self, data):
