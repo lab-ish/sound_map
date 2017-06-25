@@ -23,19 +23,69 @@ class NoiseReduction():
 
     #--------------------------------------------------
     # 全データでcross-validation
-    def cross_validation(self):
+    def cross_validation(self, wo_pca=False):
         results = pd.DataFrame(columns=('tp', 'fn', 'fp', 'tn',
                                         'accuracy', 'precision', 'recall', 'f_measure',
                                         'train_len', 'test_len'))
+        test_func = self.pca_lr_test
+        if wo_pca:
+            test_func = self.lr_test
+
         for cnt in range(self.div):
             results = results.append(
-                pd.Series(self.pca_lr_test(cnt),
+                pd.Series(test_func(cnt),
                           index=('tp', 'fn', 'fp', 'tn',
                                  'accuracy', 'precision', 'recall', 'f_measure',
                                  'train_len', 'test_len')),
                 ignore_index=True)
 
         return results
+
+    #--------------------------------------------------
+    def lr_test(self, train_idx):
+        # cross-validationのindex番号が範囲を超えているときは評価不能
+        if train_idx is not None and (train_idx >= self.div or train_idx < 0):
+            return False
+
+        idx = range(self.div)
+
+        # 学習用のデータを抽出
+        train_data, true_false, train_len = self.data.get_partial_data(idx.pop(train_idx), self.div)
+        if not train_len:
+            return False
+
+        # LR学習
+        self.lr_train(train_data, true_false)
+
+        # テストデータを連結
+        test_data = np.empty([0, train_data.shape[1]])
+        true_val  = np.empty(0, dtype='int8')
+        test_len  = 0
+        for cnt in idx:
+            x = self.data.get_partial_data(cnt, self.div)
+            if x[0] is not None:
+                test_data = np.r_[test_data, x[0]]
+                true_val  = np.append(true_val, x[1])
+                test_len += x[2]
+
+        # Logistic regression
+        #   左列: 推定値、右列: 真値
+        results = np.c_[self.lr.predict(test_data), true_val]
+
+        # true positive, false negative, false positive, true negativeの数
+        tp = len((results[:,0] & results[:,1] ==  1).nonzero()[0])  # 11
+        fn = len((results[:,0] - results[:,1] == -1).nonzero()[0])  # 01
+        fp = len((results[:,0] - results[:,1] ==  1).nonzero()[0])  # 10
+        tn = len((results[:,0] | results[:,1] ==  0).nonzero()[0])  # 00
+        # accuracy, precision, recall, f-measure
+        accuracy  = 1.0*(tp+tn)/(tp+fp+fn+tn)
+        precision = 1.0*tp/(tp+fp)
+        recall    = 1.0*tp/(tp+fn)
+        f_measure = 2.0*precision*recall/(precision+recall)
+
+        return [tp, fn, fp, tn,
+                accuracy, precision, recall, f_measure,
+                train_len, test_len]
 
     #--------------------------------------------------
     # cross-validationのindex番号を指定して評価
@@ -77,12 +127,12 @@ class NoiseReduction():
         # Logistic regression
         #   左列: 推定値、右列: 真値
         results = np.c_[self.lr.predict(test_pca), true_val]
+
         # true positive, false negative, false positive, true negativeの数
         tp = len((results[:,0] & results[:,1] ==  1).nonzero()[0])  # 11
         fn = len((results[:,0] - results[:,1] == -1).nonzero()[0])  # 01
         fp = len((results[:,0] - results[:,1] ==  1).nonzero()[0])  # 10
         tn = len((results[:,0] | results[:,1] ==  0).nonzero()[0])  # 00
-
         # accuracy, precision, recall, f-measure
         accuracy  = 1.0*(tp+tn)/(tp+fp+fn+tn)
         precision = 1.0*tp/(tp+fp)
