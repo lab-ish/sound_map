@@ -13,14 +13,16 @@ import numpy as np
 class SignalProcess(object):
     # winsize: FFT windowサイズ
     # shift  : FFT windowをシフトするサイズ
-    def __init__(self, data1, data2, winsize=512, shift=128):
+    def __init__(self, data1, data2, samp_rate=48e3, winsize=512, shift=128, mic_sep=0.5):
         # シフトサイズの倍数がFFT windowサイズであるかチェック
         if winsize % shift != 0:
-            sys.stderr.write("Invalid shift size: window size is a multiple of shift size.\n")
+            sys.stderr.write("Invalid shift size: window size is not a multiple of shift size.\n")
             raise ValueError
         self.winsize = winsize
         self.shift   = shift
         self.folds   = self.winsize / self.shift
+        # 有効なsound mapの範囲（音速340m/sとする）
+        self.max_delay = int(np.ceil(mic_sep * samp_rate / 340.0)) + 5
 
         # データの長さは一致する？
         if len(data1) != len(data2):
@@ -58,8 +60,8 @@ class SignalProcess(object):
         #      後: 0 1 2 3 ... 510 511 -512 -511 ...   -2   -1
         sound_map[(sound_map >= self.winsize/2)] -= self.winsize
 
-        #マイク幅50cmの場合の有効値以外は捨てる
-        sound_map[(abs(sound_map) > 71)] = -100
+        #マイク幅に鑑みて有効値以外は捨てる
+        sound_map[(abs(sound_map) > self.max_delay)] = -100
 
         return sound_map
 
