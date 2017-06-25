@@ -122,7 +122,7 @@ class TrueData():
             true_data = self.truth[blk_size*train_idx:blk_size*(train_idx+1)]
 
         if len(true_data) == 0:
-            return [None, None]
+            return [None, None, None]
         true_data = true_data.reset_index(drop=True)
 
         # 車両非通過時のFFTデータ開始・終端位置を計算
@@ -130,6 +130,9 @@ class TrueData():
         for cnt in range(len(true_data)-1):
             false_data[cnt,:] = np.array(self.no_vehicle_idx(true_data.loc[cnt], true_data.loc[cnt+1]))
         false_data = false_data[false_data[:,0] != false_data[:,1],:]
+        if len(false_data) == 0:
+            return [None, None, None]
+
         # データフレームに変換しておく
         false_data = pd.DataFrame(false_data,
                                   columns=('start_idx', 'end_idx'),

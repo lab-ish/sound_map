@@ -51,7 +51,7 @@ class NoiseReduction():
 
         # 学習用のデータを抽出
         train_data, true_false, train_len = self.data.get_partial_data(idx.pop(train_idx), self.div)
-        if not train_len:
+        if train_len is None:
             return False
 
         # LR学習
