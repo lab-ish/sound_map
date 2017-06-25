@@ -11,6 +11,7 @@ Required Libraries
 
 * wave
 * numpy
+* pandas
 * scipy
 * scikit-learn
 
@@ -65,6 +66,6 @@ GCC結果をグラフ化するためには ``plotting.py`` を使用する。
 Copyright, License
 ==================
 
-Copyright (c) 2015-2016, Shigemi ISHIDA
+Copyright (c) 2015-2017, Shigemi ISHIDA
 
 **DO NOT REDISTRIBUTE THIS PROGRAM NOR A PART OF THIS PROGRAM.**
