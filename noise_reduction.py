@@ -23,7 +23,7 @@ class NoiseReduction():
 
     #--------------------------------------------------
     # 全データでcross-validation
-    def cross_validation(self, wo_pca=False):
+    def cross_validation(self, wo_pca=False, pca_all=True):
         results = pd.DataFrame(columns=('tp', 'fn', 'fp', 'tn',
                                         'accuracy', 'precision', 'recall', 'f_measure',
                                         'train_len', 'test_len'))
@@ -33,7 +33,7 @@ class NoiseReduction():
 
         for cnt in range(self.div):
             results = results.append(
-                pd.Series(test_func(cnt),
+                pd.Series(test_func(cnt, pca_all),
                           index=('tp', 'fn', 'fp', 'tn',
                                  'accuracy', 'precision', 'recall', 'f_measure',
                                  'train_len', 'test_len')),
@@ -42,7 +42,8 @@ class NoiseReduction():
         return results
 
     #--------------------------------------------------
-    def lr_test(self, train_idx):
+    # pca_allパラメータは不要だが、pca_lr_testと共通の引数とするために受け取る
+    def lr_test(self, train_idx, pca_all=None):
         # cross-validationのindex番号が範囲を超えているときは評価不能
         if train_idx is not None and (train_idx >= self.div or train_idx < 0):
             return False
@@ -94,7 +95,7 @@ class NoiseReduction():
 
     #--------------------------------------------------
     # cross-validationのindex番号を指定して評価
-    def pca_lr_test(self, train_idx):
+    def pca_lr_test(self, train_idx, pca_all=True):
         # cross-validationのindex番号が範囲を超えているときは評価不能
         if train_idx is not None and (train_idx >= self.div or train_idx < 0):
             return False
@@ -106,12 +107,19 @@ class NoiseReduction():
         if not train_len:
             return False
 
-        # PCAの主成分推定
-        pca = self.pca_train(train_data)
-
-        # LR学習
-        self.lr_train(pca,
-                      true_false)
+        # 全データでPCA学習する？
+        if pca_all:
+            # PCAの主成分推定
+            pca = self.pca_train(train_data)
+            # LR学習
+            self.lr_train(pca, true_false)
+        else:
+            # PCAの主成分推定
+            true_pca = self.pca_train(train_data[(true_false == 1),:])
+            # LR学習用に非通過時のデータをPCA
+            false_pca = self.pca_apply(train_data[(true_false == 0),:])
+            # LR学習
+            self.lr_train(np.r_[true_pca, false_pca], true_false)
 
         # テストデータを連結
         test_data = np.empty([0, train_data.shape[1]])
@@ -150,7 +158,8 @@ class NoiseReduction():
     #   真値ファイルをあらかじめ読み込んでおくこと
     def lr_train(self, train_data, true_false, savefile=None):
         # LR学習
-        self.lr = LR(C=1, solver='lbfgs', max_iter=100).fit(train_data, true_false)
+        self.lr = LR(C=1, solver='lbfgs', max_iter=100)
+        self.lr.fit(train_data, true_false)
 
         # 出力先が指定されているならばファイルに保存
         if savefile is not None:
