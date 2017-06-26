@@ -57,6 +57,24 @@ GCC結果をグラフ化するためには ``plotting.py`` を使用する。
 
    % python plotting.py -s <wavefile> [offset1] [offset2] ...
 
+真値ファイルの作成補助
+======================
+
+``srt_to_truth.py`` を用いればSubRip（.srt）形式の字幕から真値ファイルを作成することができる。
+字幕の形式は以下の通りとすること。
+
+* 字幕の開始時刻: 車両がマイクの真ん中を通過した時刻。
+* 字幕の終了時刻: 車両が画面から出て行った時刻。現在は使用していない。
+* 字幕: 方向（L2RまたはR2L） 半角スペース 車両タイプ（normal, truck, bus, van, hvなど）
+
+  * タイプとしてbicycleも入れられるけど、真値ファイルに出力はされない。
+
+このような形式の字幕ファイルを使用し、以下のように実行する。
+
+.. code-block:: bash
+
+   % python srt_to_truth.py output_truth.dat input.srt
+
 注意事項
 ========
 
