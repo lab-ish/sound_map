@@ -102,7 +102,7 @@ class TrueData():
         # 帯域の1/8のLPFをかけるので、後半を捨てる
         fft_ret = fft_ret[0:self.winsize/16]
 
-        return np.abs(fft_ret)**2
+        return np.abs(fft_ret)
 
     #--------------------------------------------------
     # データを分割し、train_idxで指定された部分のデータに関して
