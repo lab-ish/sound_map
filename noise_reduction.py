@@ -79,9 +79,14 @@ class NoiseReduction():
         tn = len((results[:,0] | results[:,1] ==  0).nonzero()[0])  # 00
         # accuracy, precision, recall, f-measure
         accuracy  = 1.0*(tp+tn)/(tp+fp+fn+tn)
-        precision = 1.0*tp/(tp+fp)
-        recall    = 1.0*tp/(tp+fn)
-        f_measure = 2.0*precision*recall/(precision+recall)
+        if tp == 0:
+            precision = 0
+            recall    = 0
+            f_measure = 0
+        else:
+            precision = 1.0*tp/(tp+fp)
+            recall    = 1.0*tp/(tp+fn)
+            f_measure = 2.0*precision*recall/(precision+recall)
 
         return [tp, fn, fp, tn,
                 accuracy, precision, recall, f_measure,
