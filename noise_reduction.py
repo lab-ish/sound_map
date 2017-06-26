@@ -107,13 +107,10 @@ class NoiseReduction():
             return False
 
         # PCAの主成分推定
-        true_pca = self.pca_train(train_data[(true_false == 1),:])
-
-        # LR学習用に非通過時のデータをPCA
-        false_pca = self.pca_apply(train_data[(true_false == 0),:])
+        pca = self.pca_train(train_data)
 
         # LR学習
-        self.lr_train(np.r_[true_pca, false_pca],
+        self.lr_train(pca,
                       true_false)
 
         # テストデータを連結
