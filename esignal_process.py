@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2015, Shigemi ISHIDA
+# Copyright (c) 2015-2017, Shigemi ISHIDA
 # All rights reserved.
 #
 # DO NOT REDISTRIBUTE THIS PROGRAM NOR A PART OF THIS PROGRAM.
