@@ -40,13 +40,12 @@ if __name__ == '__main__':
     index = np.arange(0, len(sound_map))
     timebox = data.sample_timelen * sig.shift * index
     save_data = np.c_[index, timebox, sound_map, sound_map_time]
-    print "Writing output to %s ..." % (outname),
+    print "Writing output to %s ..." % (outname)
     with open(outname, "w") as f:
         f.write("#index\ttime\tsound_delay\tsound_delay_time\n")
         np.savetxt(f, save_data,
                    fmt=["%d", "%g", "%d", "%g"],
                    delimiter="\t")
-    print "done"
 
     del data
     del sig
