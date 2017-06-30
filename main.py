@@ -27,7 +27,7 @@ if __name__ == '__main__':
         outname = sys.argv[2]
 
     # データ読み込み
-    data = wave_data.WaveData(wavefile)
+    data = wave_data.WaveData(wavefile, False)
 
     # データ処理
     sig = signal_process.SignalProcess(data.left, data.right, data.sample_rate)
