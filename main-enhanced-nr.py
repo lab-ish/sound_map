@@ -15,29 +15,52 @@ import noise_reduction
 import esignal_process_nr
 
 #======================================================================
-if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        sys.stderr.write("Usage: python %s <wavefile> [soundmap_out]\n" % sys.argv[0])
-        quit()
+def arg_parser():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("wavefile", type=str, action="store",
+                        help="wave input file",
+                        )
+    parser.add_argument("-o", "--output", type=str, action="store",
+                        dest="outfile",
+                        nargs="?",
+                        default=None,
+                        help="soundmap output file",
+                        )
+    parser.add_argument("-p", "--pca_file", type=str, action="store",
+                        dest="pca_file",
+                        nargs="?",
+                        default="pca.pkl",
+                        help="pca input file",
+                        )
+    parser.add_argument("-l", "--lr_file", type=str, action="store",
+                        dest="lr_file",
+                        nargs="?",
+                        default="lr.pkl",
+                        help="logistic regression input file",
+                        )
+    return parser
 
+#----------------------------------------------------------------------
+if __name__ == '__main__':
     # 引数処理
-    wavefile = sys.argv[1]
+    args = arg_parser().parse_args()
+
     # sound mapデータの出力先のデフォルトはwaveファイルの最後を'_enhanced_nr.dat'としたもの
-    outname = os.path.splitext(wavefile)[0] + '_enhanced_nr.dat'
-    if len(sys.argv) >= 3:
-        outname = sys.argv[2]
+    if args.outfile is None:
+        args.outfile = os.path.splitext(args.wavefile)[0] + '_enhanced_nr.dat'
 
     # データ読み込み
     #   true_dataファイルのデフォルトはwaveファイルベース+'_truth.dat'
-    base_name = os.path.splitext(wavefile)[0]
+    base_name = os.path.splitext(args.wavefile)[0]
     base_dir  = os.path.dirname(base_name)
     true_file = base_name + '_truth.dat'
-    data = true_data.TrueData(true_file, wavefile)
+    data = true_data.TrueData(true_file, args.wavefile)
 
     # データ処理
     nr = noise_reduction.NoiseReduction(data, 6, 17)
-    nr.pca_load(base_dir + "/pca.pkl")
-    nr.lr_load(base_dir + "/lr.pkl")
+    nr.pca_load(args.pca_file)
+    nr.lr_load(args.lr_file)
     esign = esignal_process_nr.ESignalProcessNr(data.wav.left, data.wav.right, nr, data.samp_rate)
     esound_map_nr = esign()
 
@@ -49,8 +72,8 @@ if __name__ == '__main__':
     timebox = 1.0 * index * esign.shift / data.samp_rate
     save_data = np.c_[index, timebox,
                       esound_map_nr, esound_map_time_nr]
-    print "Writing output to %s ..." % (outname)
-    with open(outname, "w") as f:
+    print "Writing output to %s" % (args.outfile)
+    with open(args.outfile, "w") as f:
         f.write("#index\ttime\tesound_nr_delay\tesound_nr_delay_time\n")
         np.savetxt(f, save_data,
                    fmt=["%d", "%g", "%d", "%g"],
