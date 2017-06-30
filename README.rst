@@ -32,7 +32,18 @@ Sound mapデータはwavファイルの拡張子を ``.dat`` に変更したも�
    % python main.py <wavefile> [soundmap_out]
 
 拡張Sound mapを得る場合は ``main-enhanced.py`` を用いる。
-拡張Sound mapデータはwavファイルの拡張子 ``_enhanced.dat`` に変更したものに書き出される。
+拡張Sound mapデータはwavファイルの拡張子を ``_enhanced.dat`` に変更したものに書き出される。
+
+ノイズ低減型の場合は学習データを別途用意しておく必要がある（現在は ``noise_reduction.py`` を用いて手動で作成してファイルに保存しておく）。
+以下のようにPCA、logistic regressionの学習ファイルを指定して実行する。
+
+.. code-block:: bash
+
+   % python main-enhanced-nr.py [-p <pca.pkl>] [-l <lr.pkl>] <wavefile>
+
+``-p`` 、 ``-l`` による指定が無い場合はカレントディレクトリの ``pca.pkl`` 、 ``lr.pkl`` が使用される。
+Sound mapデータはwavファイルの拡張子を ``_enhanced_nr.dat`` に変更したものに書き出される。
+変更したい場合は ``-o`` オプションを使用する。
 
 GCC結果のグラフ化
 -----------------
