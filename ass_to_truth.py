@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2015, Shigemi ISHIDA
+# Copyright (c) 2015-2017, Shigemi ISHIDA
 # All rights reserved.
 #
 # DO NOT REDISTRIBUTE THIS PROGRAM NOR A PART OF THIS PROGRAM.
@@ -12,7 +12,7 @@ import pandas as pd
 from itertools import groupby
 
 #======================================================================
-class SubRip():
+class AegiSubs():
     UTF8_BOM = bytearray([0xEF, 0XBB, 0XBF])
 
     def __init__(self, infile):
@@ -24,43 +24,39 @@ class SubRip():
         # open srt file
         with open(self.infile) as f:
             # read each group into a list
-            self.srt_raw = [list(g) for b,g in groupby(f,
+            self.sub_raw = [list(g) for b,g in groupby(f,
                                                        lambda x: bool(x.strip())) if b]
             # remove BOM if exists
-            self.srt_raw[0][0] = self.__strip_bom(self.srt_raw[0][0])
-        self.__parse()
+            self.sub_raw[0][0] = self.__strip_bom(self.sub_raw[0][0])
+        # lookup subs
+        for sub_set in self.sub_raw:
+            if sub_set[0].strip() == '[Events]':
+                self.sub_raw = [x.strip() for x in sub_set[1:len(sub_set)]]
+                self.sub_raw = filter(lambda x: x.split(":")[0] == 'Dialogue', self.sub_raw)
+                return True
+        return False
 
     #--------------------------------------------------
-    def __parse(self):
+    def parse(self):
+        # remove "Dialogue: "
+        self.sub_raw = [x.split(": ")[1].split(",") for x in self.sub_raw]
+
         self.subs = []
 
-        for sub in self.srt_raw:
-            # skip invalid entries
-            if len(sub) < 3:
-                continue
-
+        for sub in self.sub_raw:
             # extract subtitle info
-            sub = [x.strip() for x in sub]
-            try:
-                num     = int(sub[0])
-            except:
-                print "Invalid sub format %s\n%s\n%s" % (sub[0], sub[1], sub[2])
-                return False
-            st_end  = sub[1]
-            content = sub[2:len(sub)]
-            # retrieve start and end
-            [start, end] = st_end.split(' --> ')
-            start = datetime.datetime.strptime(start, '%H:%M:%S,%f')
-            end   = datetime.datetime.strptime(end, '%H:%M:%S,%f')
-
+            #   0,0:04:22.85,0:04:23.64,Default,,0,0,0,,R2L normal
+            start   = datetime.datetime.strptime(sub[1], '%H:%M:%S.%f')
+            end     = datetime.datetime.strptime(sub[2], '%H:%M:%S.%f')
+            content = sub[9]
             # store
-            self.subs.append([num, start, end, content])
+            self.subs.append([start, end, content])
         return True
 
     #--------------------------------------------------
     def __strip_bom(self, s):
-        if s.startswith(SubRip.UTF8_BOM):
-            return s[len(SubRip.UTF8_BOM):]
+        if s.startswith(AegiSubs.UTF8_BOM):
+            return s[len(AegiSubs.UTF8_BOM):]
         return s
 
     #--------------------------------------------------
@@ -72,7 +68,7 @@ class SubRip():
 #======================================================================
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        sys.stderr.write("Usage: python %s <truth_output> <input_srt>\n" % sys.argv[0])
+        sys.stderr.write("Usage: python %s <truth_output> <input_ass>\n" % sys.argv[0])
         quit()
 
     # 引数処理
@@ -80,15 +76,12 @@ if __name__ == '__main__':
     infile  = sys.argv[2]
 
     # 字幕ファイルを読み込み
-    srt = SubRip(infile)
-    srt.load()
+    sub = AegiSubs(infile)
+    sub.load()
+    sub.parse()
 
     # DataFrameに変換
-    df = pd.DataFrame(srt.subs, columns=('sub_num', 'start', 'end', 'type_raw'))
-    df = df.drop('sub_num', axis=1)
-
-    # 重なるタイミングで字幕を付けると2回現れるので、最初の1つだけを見るようにする
-    df['type_raw'] = df.type_raw.apply(lambda x: x[0])
+    df = pd.DataFrame(sub.subs, columns=('start', 'end', 'type_raw'))
 
     # 方向とタイプを分離
     df['dir']  = df.type_raw.apply(lambda x: x.split(' ')[0])
