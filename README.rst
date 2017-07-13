@@ -4,7 +4,7 @@
  ITSプロジェクト向けSound Map描画プログラム
 ============================================
 
-音声ファイルの左右音声の類似性をGeneralized Cross-Correlationを使って判断するプログラム。
+音声ファイルの左右音声の類似性をGeneralized Cross-Correlationを使って判断し、sound mapデータを得るプログラム。
 
 Required Libraries
 ==================
@@ -15,7 +15,7 @@ Required Libraries
 * scipy
 * scikit-learn
 
-  * for noise reduction
+  * ノイズ低減型の場合のみ
 
 Usage
 =====
@@ -30,6 +30,12 @@ Sound mapデータはwavファイルの拡張子を ``.dat`` に変更したも�
 .. code-block:: bash
 
    % python main.py <wavefile> [soundmap_out]
+
+サンプリング周波数48kHz、データ長16bitのステレオwaveファイルを想定して書かれている（ハードコード）ため、違う場合は適宜書き換えること。
+なお、 ``main.py`` で使用している ``wave_data.py`` ではdecimation比率を与えるとdecimationしてくれる。
+
+拡張サウンドマップ方式
+----------------------
 
 拡張Sound mapを得る場合は ``main-enhanced.py`` を用いる。
 拡張Sound mapデータはwavファイルの拡張子を ``_enhanced.dat`` に変更したものに書き出される。
@@ -71,20 +77,22 @@ GCC結果をグラフ化するためには ``plotting.py`` を使用する。
 真値ファイルの作成補助
 ======================
 
-``srt_to_truth.py`` を用いればSubRip（.srt）形式の字幕から真値ファイルを作成することができる。
+AegiSubで作成した字幕ファイル（.ass）から真値ファイルを作成できる。
 字幕の形式は以下の通りとすること。
 
 * 字幕の開始時刻: 車両がマイクの真ん中を通過した時刻。
-* 字幕の終了時刻: 車両が画面から出て行った時刻。現在は使用していない。
+* 字幕の終了時刻: 車両が画面から出て行った時刻（現在は未使用）
 * 字幕: 方向（L2RまたはR2L） 半角スペース 車両タイプ（normal, truck, bus, van, hvなど）
 
-  * タイプとしてbicycleも入れられるけど、真値ファイルに出力はされない。
+.. code-block:: text
+
+   L2R normal
 
 このような形式の字幕ファイルを使用し、以下のように実行する。
 
 .. code-block:: bash
 
-   % python srt_to_truth.py output_truth.dat input.srt
+   % python ass_to_truth.py output_truth.dat input.ass
 
 注意事項
 ========
