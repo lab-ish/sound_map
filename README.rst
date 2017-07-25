@@ -17,6 +17,22 @@ Required Libraries
 
   * ノイズ低減型の場合のみ
 
+ノート
+======
+
+**本プログラムはwavファイルの情報をきちんと解析しているわけではない。**
+このため、以下の形式のwavファイルを用意することを推奨する。
+
+* 16bitステレオ
+* 48kHzサンプリング
+* Linear PCM, リトルエンディアン
+
+Linear PCMの録音を含むMP4動画から音声を抽出するには ``ffmpeg`` を使うと良い。
+
+.. code-block:: bash
+
+   % ffmpeg -i hoge.mp4 -vn -acodec pcm_s16le hoge.wav
+
 Usage
 =====
 
