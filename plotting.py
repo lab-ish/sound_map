@@ -105,10 +105,15 @@ if __name__ == '__main__':
         args.yrange = map(float, args.yrange)
 
     # データ読み込み
-    data = wave_data.WaveData(args.wavefile)
+    data = wave_data.WaveData(args.wavefile, False)
 
     # データ処理
     sig = signal_process.SignalProcess(data.left, data.right)
+
+    # offsetの範囲をチェック
+    if (args.offset[0] > sig.data1.shape[0] - sig.folds):
+        sys.stderr.write("Error: offset over range.\n")
+        quit()
 
     if args.simul:
         gcc, timebox = gcc_time(sig, args.offset[0], data.sample_rate)
