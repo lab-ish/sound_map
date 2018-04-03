@@ -19,13 +19,13 @@ class TruthData():
         return
 
     #--------------------------------------------------
-    def num_simul(self):
+    def num_simul(self, range=2):
         # 通過時刻を並べ替えた上で差分を取る
         #   通過時刻は1列目
         self.diff = np.diff(np.sort(self.data.iloc[:,0]))
 
         # diffが2以下のやつのindex番号を取得
-        idx = (self.diff <= 2).nonzero()[0]
+        idx = (self.diff <= range).nonzero()[0]
         # index番号の差が1以下の個数（連続して並んでいる個数）
         d = np.diff(idx)
         num_successive = len(d[d == 1])
@@ -36,10 +36,24 @@ class TruthData():
         return self.num_simul
 
 #======================================================================
-if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        sys.stderr.write("Usage: python %s <truth_data_file>\n" % sys.argv[0])
-        quit()
+# 引数処理
+def arg_parser():
+    DEFAULT_RANGE = 2
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("truth_file", type=str, action="store",
+                    help="truth data TSV file",
+                    )
+    ap.add_argument("-r", "--range", type=float, action="store",
+                    default=DEFAULT_RANGE,
+                    help="time length as we regard simultaneous passing",
+                    )
+    return ap
 
-    t = TruthData(sys.argv[1])
-    print t.num_simul()
+#======================================================================
+if __name__ == '__main__':
+    parser = arg_parser()
+    args = parser.parse_args()
+
+    t = TruthData(args.truth_file)
+    print t.num_simul(args.range)
