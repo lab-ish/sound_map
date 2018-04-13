@@ -66,7 +66,6 @@ def single_plot(gcc, timebox, xrange=None, yrange=None, newfig=True, label=None)
     if yrange is not None:
         plt.ylim(yrange)
 
-    print label
     if label is not None:
         plt.plot(timebox, gcc,
                 marker='',
