@@ -20,6 +20,9 @@ class TruthData():
         # データを通過時刻で並べ替える
         self.data.sort_values("time", inplace=True)
         return
+    #--------------------------------------------------
+    def num_types(self):
+        return self.data.groupby(["dir", "type"])["time"].count()
 
     #--------------------------------------------------
     def num_simul_successive(self, range=2):
@@ -92,3 +95,5 @@ if __name__ == '__main__':
     ret = t.num_simul_successive(args.range)
 
     print ret
+    print
+    print t.num_types()
