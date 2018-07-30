@@ -77,9 +77,9 @@ if __name__ == '__main__':
         df_tru[df_tru.dir == d].apply(find_drop_nearest, axis=1)
 
     # 結果をまとめたdataframeを作成
-    df_tru["true"] = True
+    df_tru["ground_truth"] = True
     df_est["detect"] = True
-    df_est.rename(columns={"match": "true"}, inplace=True)
+    df_est.rename(columns={"match": "ground_truth"}, inplace=True)
     result = pd.concat([df_est, df_tru[df_tru.match == False]], sort=False).sort_values("time").drop(columns="match")
     result.detect = result.detect.fillna(False)
 
@@ -87,14 +87,12 @@ if __name__ == '__main__':
     name = args.estimate_data.split(".")
     base = ".".join(name[0:len(name)-1])
     outname = base + "_est.tsv"
-    with open(outname, "w") as f:
-        f.write("#")
-        result.to_csv(f, sep="\t", index=False)
+    result.to_csv(outname, sep="\t", index=False)
 
     # TP, FN, FPはそれぞれ以下の条件を探し出せばOK
-    tp = result[(result.true == True) & (result.detect == True)]
-    fn = result[(result.true == True) & (result.detect == False)]
-    fp = result[(result.true == False) & (result.detect == True)]
+    tp = result[(result.ground_truth == True) & (result.detect == True)]
+    fn = result[(result.ground_truth == True) & (result.detect == False)]
+    fp = result[(result.ground_truth == False) & (result.detect == True)]
 
     # プロット指定のときはsoundmapファイルが指定されていないとエラー
     if args.fn_plot is not None or args.fp_plot is not None:
