@@ -61,6 +61,7 @@ if __name__ == '__main__':
     df_tru["match"] = False
     df_est["match"] = False
     df_est["true_time"] = np.nan
+    df_est["type"] = ""
     for d in ["L2R", "R2L"]:
         df_est_eval = df_est[df_est.dir == d].copy()
         def find_drop_nearest(x):
@@ -71,17 +72,29 @@ if __name__ == '__main__':
                 df_tru.loc[x.name, "match"] = True
                 df_est.loc[diff.head(1).index, "match"] = True
                 df_est.loc[diff.head(1).index, "true_time"] = x.time
+                df_est.loc[diff.head(1).index, "type"] = x.type
                 df_est_eval.drop(index=diff.head(1).index, inplace=True)
         df_tru[df_tru.dir == d].apply(find_drop_nearest, axis=1)
 
+    # 結果をまとめたdataframeを作成
+    df_tru["true"] = True
+    df_est["detect"] = True
+    df_est.rename(columns={"match": "true"}, inplace=True)
+    result = pd.concat([df_est, df_tru[df_tru.match == False]], sort=False).sort_values("time").drop(columns="match")
+    result.detect = result.detect.fillna(False)
+
+    # 保存
+    name = args.estimate_data.split(".")
+    base = ".".join(name[0:len(name)-1])
+    outname = base + "_est.tsv"
+    with open(outname, "w") as f:
+        f.write("#")
+        result.to_csv(f, sep="\t", index=False)
+
     # TP, FN, FPはそれぞれ以下の条件を探し出せばOK
-    df_tru["start"] = df_tru.time - args.range/2
-    df_tru["end"]   = df_tru.time + args.range/2
-    df_est["start"] = df_est.time - args.range/2
-    df_est["end"]   = df_est.time + args.range/2
-    tp = df_est[df_est.match == True]
-    fn = df_tru[df_tru.match == False]
-    fp = df_est[df_est.match == False]
+    tp = result[(result.true == True) & (result.detect == True)]
+    fn = result[(result.true == True) & (result.detect == False)]
+    fp = result[(result.true == False) & (result.detect == True)]
 
     # プロット指定のときはsoundmapファイルが指定されていないとエラー
     if args.fn_plot is not None or args.fp_plot is not None:
@@ -93,6 +106,8 @@ if __name__ == '__main__':
         soundmap = np.loadtxt(args.soundmap, usecols=[1,3])
 
     def plot_time(df, basename):
+        start = df.time - args.range/2
+        end   = df.time + args.range/2
         plotout = basename + ("_%.2f_" % df.time) + df.dir + ".eps"
         fig = plt.figure()
         #------------------------------
@@ -105,7 +120,7 @@ if __name__ == '__main__':
         plt.rcParams['pdf.use14corefonts'] = True
         plt.rcParams['text.usetex'] = True
         #------------------------------
-        plt.xlim([df.start,df.end])
+        plt.xlim([start,end])
         plt.ylim([-1.55,1.55])
         plt.xlabel("Time [s]")
         plt.ylabel("Sound Delay [ms]")
