@@ -75,6 +75,10 @@ if __name__ == '__main__':
         df_tru[df_tru.dir == d].apply(find_drop_nearest, axis=1)
 
     # TP, FN, FPはそれぞれ以下の条件を探し出せばOK
+    df_tru["start"] = df_tru.time - args.range/2
+    df_tru["end"]   = df_tru.time + args.range/2
+    df_est["start"] = df_est.time - args.range/2
+    df_est["end"]   = df_est.time + args.range/2
     tp = df_est[df_est.match == True]
     fn = df_tru[df_tru.match == False]
     fp = df_est[df_est.match == False]
@@ -89,7 +93,7 @@ if __name__ == '__main__':
         soundmap = np.loadtxt(args.soundmap, usecols=[1,3])
 
     def plot_time(df, basename):
-        plotout = basename + "_%.2f.eps" % df.time
+        plotout = basename + ("_%.2f_" % df.time) + df.dir + ".eps"
         fig = plt.figure()
         #------------------------------
         plt.rcParams['font.family'] = 'Times New Roman' # 全体のフォント
@@ -110,11 +114,7 @@ if __name__ == '__main__':
         plt.close()
 
     if args.fn_plot is not None:
-        fn["start"] = fn.time - args.range/2
-        fn["end"]   = fn.time + args.range/2
         fn.apply(plot_time, axis=1, args=[args.fn_plot])
 
     if args.fp_plot is not None:
-        fp["start"] = fp.time - args.range/2
-        fp["end"]   = fp.time + args.range/2
         fp.apply(plot_time, axis=1, args=[args.fp_plot])
