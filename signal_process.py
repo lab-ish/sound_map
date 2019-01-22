@@ -71,9 +71,9 @@ class SignalProcess(object):
         fft_data2 = self.fft(self.data2, offset)
 
         # 帯域の1/8のLPFをかける
-        lowpass = np.append(np.append(np.ones(self.winsize/16),
-                                      np.zeros(self.winsize-self.winsize/8)),
-                                      np.ones(self.winsize/16))
+        lowpass = np.append(np.append(np.ones(int(self.winsize/16)),
+                                      np.zeros(self.winsize-int(self.winsize/8))),
+                                      np.ones(int(self.winsize/16)))
         fft_data1 = lowpass * fft_data1
         fft_data2 = lowpass * fft_data2
 
