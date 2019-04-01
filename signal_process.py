@@ -20,7 +20,7 @@ class SignalProcess(object):
             raise ValueError
         self.winsize = winsize
         self.shift   = shift
-        self.folds   = self.winsize / self.shift
+        self.folds   = int(self.winsize / self.shift)
         # 有効なsound mapの範囲（音速340m/sとする）
         self.max_delay = int(np.ceil(mic_sep * samp_rate / 340.0)) + 5
 
