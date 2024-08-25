@@ -119,6 +119,6 @@ AegiSubで作成した字幕ファイル（.ass）から真値ファイルを作
 Copyright, License
 ==================
 
-Copyright (c) 2015-2017, Shigemi ISHIDA
+This software is released under the BSD 3-clause license. See `LICENSE.txt`.
 
-**DO NOT REDISTRIBUTE THIS PROGRAM NOR A PART OF THIS PROGRAM.**
+Copyright (c) 2015-2024, Shigemi ISHIDA
