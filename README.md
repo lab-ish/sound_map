@@ -1,6 +1,5 @@
 # Sound Mapping for Vehicle Sensing
 
-> テンプレートです。
 > Calculate generalized cross-correlation (GCC) on stereo sound signals to derive sound map
 
 ## Requirements
