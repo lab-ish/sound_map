@@ -93,8 +93,29 @@ python ass_to_truth.py output_truth.dat input.ass
 24-bit wave file results in TOO LONG processing.
 We highly recommend to convert 24-bit waves file into 16-bit wave files.
 
+## Our Papers
+
+- M. Uchino, B. Dawton, Y. Hori, S. Ishida, S. Tagashira, Y. Arakawa, and A. Fukuda
+  Initial Design of Two-Stage Acoustic Vehicle Detection System for High Traffic Roads
+  International Workshop on Pervasive Computing for Vehicular Systems (PerVehicle), in conjunction with IEEE International Conference on Pervasive Computing and Communications (PerCom), Austin, TX, pp.590-595, Mar 2020.
+  https://doi.org/10.1109/PerComWorkshops48775.2020.9156248
+- S. Ishida, M. Uchino, C. Li, S. Tagashira, and A. Fukuda
+  Design of Acoustic Vehicle Detector with Steady-Noise Suppression
+  IEEE International Conference on Intelligent Transportation Systems (ITSC), Auckland, New Zealand, pp.2848-2853, Oct 2019.
+  https://doi.org/10.1109/ITSC.2019.8917289
+- M. Uchino, S. Ishida, K. Kubo, S. Tagashira, and A. Fukuda
+  Initial Design of Acoustic Vehicle Detector with Wind Noise Suppressor
+  International Workshop on Pervasive Computing for Vehicular Systems (PerVehicle), in conjunction with IEEE International Conference on Pervasive Computing and Communications (PerCom), Kyoto, Japan, pp.814-819, Mar 2019.
+  https://doi.org/10.1109/PERCOMW.2019.8730822
+- S. Ishida, J. Kajimura, M. Uchino, S. Tagashira, and A. Fukuda
+  SAVeD: Acoustic Vehicle Detector with Speed Estimation capable of Sequential Vehicle Detection
+  IEEE International Conference on Intelligent Transportation Systems (ITSC), Maui, HI, pp.906-912, Nov 2018.
+  https://doi.org/10.1109/ITSC.2018.8569727
+
 ## License
 
 This software is released under the BSD 3-clause license. See `LICENSE.txt`.
 
 * Copyright (c) 2015-2024, Shigemi ISHIDA
+
+If you use or refer to our codes in this repository, please cite our related papers above (of course, the one relates to your project).
